@@ -1,0 +1,1 @@
+Early life history temperature exposure of *Pocillopora acuta* larvae to acute and developmental pre-exposure in Mo'orea, French Polynesia in December 2021.   
