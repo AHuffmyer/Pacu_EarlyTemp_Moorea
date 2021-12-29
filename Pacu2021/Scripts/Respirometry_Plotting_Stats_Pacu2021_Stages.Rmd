@@ -378,6 +378,18 @@ leveneTest(residuals(Rmodel1)~Temperature*Treatment*Stage, data=model_data)
 ```
 Passes assumptions.    
 
+Analyze just stage 3 for respiration.  
+
+```{r}
+stage3_data<-PRdata%>%
+  filter(Stage=="Stage3")
+
+Rmodel1_s3<-aov(R.nmol.org.min~Temperature, data=stage3_data)
+summary(Rmodel1_s3)
+```
+
+There is a significant difference in respiration by temperature in stage 3.  
+
 ## Net Photosynthesis    
 
 Build model and examine for net photosynthesis.        
@@ -409,6 +421,13 @@ Next, conduct post hoc test to look at pairwise differences for stages and treat
 ```{r}
 emm<-emmeans(Pmodel1, ~Stage*Treatment | Temperature)
 pairs(emm)
+```
+
+Analyze just stage 3 for net photosynthesis.    
+
+```{r}
+Pmodel1_s3<-aov(P.nmol.org.min~Temperature, data=stage3_data)
+summary(Pmodel1_s3)
 ```
 
 ## Gross Photosynthesis    
@@ -444,6 +463,13 @@ emm<-emmeans(GPmodel1, ~Stage*Treatment | Temperature)
 pairs(emm)
 ```
 
+Analyze just stage 3 for gross photosynthesis.    
+
+```{r}
+GPmodel1_s3<-aov(GP.nmol.org.min~Temperature, data=stage3_data)
+summary(GPmodel1_s3)
+```
+
 ##  P:R ratio   
 
 Build model and examine for PR ratio.        
@@ -475,6 +501,13 @@ Conduct post hoc test within temperature
 ```{r}
 emm<-emmeans(PRmodel1, ~Stage*Treatment | Temperature)
 pairs(emm)
+```
+
+Analyze just stage 3 for gross photosynthesis.    
+
+```{r}
+PRmodel1_s3<-aov(ratio~Temperature, data=stage3_data)
+summary(PRmodel1_s3)
 ```
 
 ## Generate summary table   
