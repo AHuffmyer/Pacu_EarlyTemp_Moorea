@@ -89,6 +89,7 @@ Plot data as a box plot.
 ```{r}
 r_plot<-PRdata %>%
     group_by(Temperature)%>%
+    filter(R.nmol.org.min<0)%>%
     ggplot(., aes(x = as.factor(Temperature), y = R.nmol.org.min, group=Temperature)) +
     geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
     geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
@@ -113,6 +114,7 @@ PRdata$Date<-as.factor(PRdata$Date)
 
 r_plot1<-PRdata %>%
     group_by(Temperature, as.factor(Date))%>%
+      filter(R.nmol.org.min<0)%>%
     ggplot(., aes(x = as.factor(Temperature), y = R.nmol.org.min, group=Temperature)) +
     facet_wrap(~Date)+
     geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
@@ -137,6 +139,7 @@ Plot data as a mean dot plot.
 ```{r}
 r_plot_b<-PRdata %>%
     group_by(Temperature)%>%
+      filter(R.nmol.org.min<0)%>%
     summarise(mean=mean(R.nmol.org.min), sd=sd(R.nmol.org.min), N=length(R.nmol.org.min), se=sd/sqrt(N))%>%
     ggplot(., aes(x = as.factor(Temperature), y = mean, group=Temperature)) +
     geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
@@ -411,13 +414,13 @@ hist(PRdata$R.nmol.org.min)
 
 Build model and examine for respiration across temperatures.        
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
-Rmodel1<-aov(R.nmol.org.min~Temperature, data=PRdata) 
+Rmodel1<-aov(R.nmol.org.min~Temperature, data=PRdata, subset=c(R.nmol.org.min<0)) 
 summary(Rmodel1)
 ```
 
 Check for effects of day.  
 ```{r}
-Rmodel1b<-aov(R.nmol.org.min~Temperature*Date, data=PRdata) 
+Rmodel1b<-aov(R.nmol.org.min~Temperature*Date, subset=c(R.nmol.org.min<0), data=PRdata) 
 summary(Rmodel1b)
 ```
 
@@ -425,7 +428,7 @@ Check assumptions of model for residual normality and variance.
 
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
 qqPlot(residuals(Rmodel1))
-leveneTest(residuals(Rmodel1)~Temperature, data=PRdata)
+#leveneTest(residuals(Rmodel1)~Temperature, data=PRdata)
 ```
 
 Conduct post hoc test.  
