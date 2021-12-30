@@ -313,6 +313,7 @@ Plot data as a box plot.
 ```{r}
 pr_plot<-PRdata %>%
     group_by(Temperature)%>%
+    filter(R.nmol.org.min<0)%>%
     ggplot(., aes(x = as.factor(Temperature), y = ratio, group=Temperature)) +
     geom_hline(yintercept=1, linetype="dashed", color="black", size=0.75)+
     geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
@@ -335,6 +336,7 @@ pr_plot<-PRdata %>%
 ```{r}
 pr_plot1<-PRdata %>%
     group_by(Temperature)%>%
+    filter(R.nmol.org.min<0)%>%
     ggplot(., aes(x = as.factor(Temperature), y = ratio, group=Temperature)) +
     facet_wrap(~Date)+
     geom_hline(yintercept=1, linetype="dashed", color="black", size=0.75)+
@@ -359,6 +361,7 @@ Plot data as a mean dot plot.
 ```{r}
 pr_plot_b<-PRdata %>%
     group_by(Temperature)%>%
+    filter(R.nmol.org.min<0)%>%
     summarise(mean=mean(ratio), sd=sd(ratio), N=length(ratio), se=sd/sqrt(N))%>%
     ggplot(., aes(x = as.factor(Temperature), y = mean, group=Temperature)) +
     geom_hline(yintercept=1, linetype="dashed", color="black", size=0.75)+
@@ -499,14 +502,14 @@ pairs(emm)
  
 Build model and examine for PR ratio across temperatures.         
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
-PRmodel1<-aov(ratio~Temperature, data=PRdata) 
+PRmodel1<-aov(ratio~Temperature, data=PRdata, subset=c(R.nmol.org.min<0)) 
 summary(PRmodel1)
 ```
 
 Check for effect of day.  
 
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
-PRmodel1b<-aov(ratio~Temperature*Date, data=PRdata) 
+PRmodel1b<-aov(ratio~Temperature*Date, data=PRdata, subset=c(R.nmol.org.min<0)) 
 summary(PRmodel1b)
 ```
 
@@ -514,7 +517,7 @@ Check assumptions of model for residual normality and variance.
 
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
 qqPlot(residuals(PRmodel1))
-leveneTest(residuals(PRmodel1)~Temperature, data=PRdata)
+#leveneTest(residuals(PRmodel1)~Temperature, data=PRdata)
 ```
 
 Conduct post hoc test.  
@@ -532,8 +535,8 @@ Generate summary of all respiration data.
 summary<-PRdata%>%
   group_by(Temperature)%>%
   filter(R.nmol.org.min<0)%>%
-  filter(P.nmol.org.min>0)%>%
-  filter(GP.nmol.org.min>0)%>%
+ # filter(P.nmol.org.min>0)%>%
+  #filter(GP.nmol.org.min>0)%>%
   summarise(N=length(R.nmol.org.min),
             Mean_R=mean(R.nmol.org.min), 
             SE_R=sd(R.nmol.org.min)/sqrt(length(R.nmol.org.min)),
