@@ -105,7 +105,32 @@ r_plot<-PRdata %>%
       axis.text=element_text(size=12, color="black"), 
       legend.title=element_text(face="bold", size=14), 
       legend.text=element_text(size=12)
-      ); r_plot
+      ); r_plot 
+```
+  
+```{r}
+PRdata$Date<-as.factor(PRdata$Date)
+
+r_plot1<-PRdata %>%
+    group_by(Temperature, as.factor(Date))%>%
+    ggplot(., aes(x = as.factor(Temperature), y = R.nmol.org.min, group=Temperature)) +
+    facet_wrap(~Date)+
+    geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
+    geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
+    geom_point(aes(fill=Temperature, group=Temperature), pch = 21, size=4, alpha=0.5, position = position_jitterdodge(0.3)) + 
+    xlab("Temperature") + 
+    scale_fill_manual(name="Temperature", values=c("blue","orange", "red"))+
+    scale_color_manual(name="Temperature", values=c("blue","orange", "red"))+
+    ylab(expression(bold(paste("R (nmol ", O[2], " larva"^-1, "min"^-1, ")")))) +
+    scale_y_continuous(limits=c(-0.2, 0.06), labels = scales::number_format(accuracy = 0.01, decimal.mark = '.'))+
+    theme_classic() + 
+    theme(
+      legend.position="none",
+      axis.title=element_text(face="bold", size=16),
+      axis.text=element_text(size=12, color="black"), 
+      legend.title=element_text(face="bold", size=14), 
+      legend.text=element_text(size=12)
+      ); r_plot1
 ```
 
 Plot data as a mean dot plot.  
@@ -135,7 +160,7 @@ r_plot_b<-PRdata %>%
 ## Photosynthesis (Net)  
 
 For photosynthesis filter out runs 7 and 8, these runs were outliers that didn't work due to equipment issues.    
-
+ 
 Plot data as a box plot.    
 ```{r}
 p_plot<-PRdata %>%
@@ -157,6 +182,29 @@ p_plot<-PRdata %>%
       legend.title=element_text(face="bold", size=14), 
       legend.text=element_text(size=12)
       ); p_plot
+```
+
+```{r}
+p_plot1<-PRdata %>%
+    group_by(Temperature)%>%
+    ggplot(., aes(x = as.factor(Temperature), y = P.nmol.org.min, group=Temperature)) +
+    facet_wrap(~Date)+
+    geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
+    geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
+    geom_point(aes(fill=Temperature, group=Temperature), pch = 21, size=4, alpha=0.5, position = position_jitterdodge(0.3)) + 
+    xlab("Temperature") + 
+    scale_fill_manual(name="Temperature", values=c("blue","orange", "red"))+
+    scale_color_manual(name="Temperature", values=c("blue","orange", "red"))+
+    ylab(expression(bold(paste("Net P (nmol ", O[2], " larva"^-1, "min"^-1, ")")))) +
+    scale_y_continuous(limits=c(-0.02, 0.33), labels = scales::number_format(accuracy = 0.01, decimal.mark = '.'))+
+    theme_classic() + 
+    theme(
+      legend.position="none",
+      axis.title=element_text(face="bold", size=16),
+      axis.text=element_text(size=12, color="black"), 
+      legend.title=element_text(face="bold", size=14), 
+      legend.text=element_text(size=12)
+      ); p_plot1
 ```
 
 Plot data as a mean dot plot.    
@@ -209,6 +257,29 @@ gp_plot<-PRdata %>%
       ); gp_plot
 ```
 
+```{r}
+gp_plot1<-PRdata %>%
+    group_by(Temperature)%>%
+    ggplot(., aes(x = as.factor(Temperature), y = GP.nmol.org.min, group=Temperature)) +
+    facet_wrap(~Date)+
+    geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
+    geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
+    geom_point(aes(fill=Temperature, group=Temperature), pch = 21, size=4, alpha=0.5, position = position_jitterdodge(0.3)) + 
+    xlab("Temperature") + 
+    scale_fill_manual(name="Temperature", values=c("blue","orange", "red"))+
+    scale_color_manual(name="Temperature", values=c("blue","orange", "red"))+
+    ylab(expression(bold(paste("Gross P (nmol ", O[2], " larva"^-1, "min"^-1, ")")))) +
+    scale_y_continuous(limits=c(-0.02, 0.33), labels = scales::number_format(accuracy = 0.01, decimal.mark = '.'))+
+    theme_classic() + 
+    theme(
+      legend.position="none",
+      axis.title=element_text(face="bold", size=16),
+      axis.text=element_text(size=12, color="black"), 
+      legend.title=element_text(face="bold", size=14), 
+      legend.text=element_text(size=12)
+      ); gp_plot1
+```
+
 Plot data as a mean dot plot.    
 ```{r}
 gp_plot_b<-PRdata %>%
@@ -256,6 +327,29 @@ pr_plot<-PRdata %>%
       legend.title=element_text(face="bold", size=14), 
       legend.text=element_text(size=12)
       ); pr_plot
+```
+
+```{r}
+pr_plot1<-PRdata %>%
+    group_by(Temperature)%>%
+    ggplot(., aes(x = as.factor(Temperature), y = ratio, group=Temperature)) +
+    facet_wrap(~Date)+
+    geom_hline(yintercept=1, linetype="dashed", color="black", size=0.75)+
+    geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
+    geom_point(aes(fill=Temperature, group=Temperature), pch = 21, size=4, alpha=0.5, position = position_jitterdodge(0.3)) + 
+    xlab("Temperature") + 
+    scale_fill_manual(name="Temperature", values=c("blue","orange", "red"))+
+    scale_color_manual(name="Temperature", values=c("blue","orange", "red"))+
+    ylab(expression(bold(paste("P:R")))) +
+    scale_y_continuous(limits=c(0, 4), labels = scales::number_format(accuracy = 0.1, decimal.mark = '.'))+
+    theme_classic() + 
+    theme(
+      legend.position="right",
+      axis.title=element_text(face="bold", size=16),
+      axis.text=element_text(size=12, color="black"), 
+      legend.title=element_text(face="bold", size=14), 
+      legend.text=element_text(size=12)
+      ); pr_plot1
 ```
 
 Plot data as a mean dot plot.     
@@ -321,6 +415,12 @@ Rmodel1<-aov(R.nmol.org.min~Temperature, data=PRdata)
 summary(Rmodel1)
 ```
 
+Check for effects of day.  
+```{r}
+Rmodel1b<-aov(R.nmol.org.min~Temperature*Date, data=PRdata) 
+summary(Rmodel1b)
+```
+
 Check assumptions of model for residual normality and variance. 
 
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
@@ -341,6 +441,12 @@ Build model and examine for Photosynthesis across temperatures.
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
 Pmodel1<-aov(P.nmol.org.min~Temperature, data=PRdata) 
 summary(Pmodel1)
+```
+
+Check for effect of day.  
+```{r, results=TRUE, warning=FALSE, message=FALSE}
+Pmodel1b<-aov(P.nmol.org.min~Temperature*Date, data=PRdata) 
+summary(Pmodel1b)
 ```
 
 Check assumptions of model for residual normality and variance.    
@@ -365,6 +471,13 @@ GPmodel1<-aov(GP.nmol.org.min~Temperature, data=PRdata)
 summary(GPmodel1)
 ```
 
+Check for effect of day.  
+
+```{r, results=TRUE, warning=FALSE, message=FALSE}
+GPmodel1b<-aov(GP.nmol.org.min~Temperature*Date, data=PRdata)
+summary(GPmodel1b)
+```
+
 Check assumptions of model for residual normality and variance.      
 
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
@@ -385,6 +498,13 @@ Build model and examine for PR ratio across temperatures.
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
 PRmodel1<-aov(ratio~Temperature, data=PRdata) 
 summary(PRmodel1)
+```
+
+Check for effect of day.  
+
+```{r, results=TRUE, warning=FALSE, message=FALSE}
+PRmodel1b<-aov(ratio~Temperature*Date, data=PRdata) 
+summary(PRmodel1b)
 ```
 
 Check assumptions of model for residual normality and variance.
