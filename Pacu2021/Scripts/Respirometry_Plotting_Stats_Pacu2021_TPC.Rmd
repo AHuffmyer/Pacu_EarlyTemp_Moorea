@@ -128,7 +128,6 @@ ggsave("Pacu2021/Figures/Respiration/TPC/Respiration.pdf", r_plot, dpi=300, w=8,
 ### https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13585
 
 ```{r}
-
 # AMBIENT CURVE FIT
 d.amb <- PRdata %>% group_by(Temperature,Treatment)%>%
     summarise(rate=abs) %>%
@@ -136,7 +135,8 @@ d.amb <- PRdata %>% group_by(Temperature,Treatment)%>%
   filter(Treatment=="Ambient")
 
 # choose model
-mod <- 'sharpschoolhigh_1981'
+get_model_names()
+#sharpeschoolhigh_1981
 
 # get start vals
 amb.start_vals <- get_start_vals(d.amb$temp,d.amb$rate, model_name = 'sharpeschoolhigh_1981')
@@ -161,7 +161,89 @@ amb.fit <- nls_multstart(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th,
 
 amb.fit
 
+# predict new data
+amb_new_data <- data.frame(temp = seq(min(d.amb$temp), max(d.amb$temp), 0.5))
+amb.preds <- augment(amb.fit, newdata = amb_new_data)
 
+amb.TCP.res <- calc_params(amb.fit) %>%
+  mutate_all(round, 2)   # round for easy viewing
+
+amb.TCP.res 
+
+```
+
+
+# BOOTSTRAPPING AMBIENT CURVE FIT
+```{r}
+# refit model using nlsLM
+fit_nlsLM <- minpack.lm::nlsLM(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 28),
+                        data = d.amb,
+                        start = coef(amb.fit),
+                        lower = amb.low_lims,
+                        upper = amb.upper_lims,
+                        weights = rep(1, times = nrow(d.amb)))
+
+# bootstrap using case resampling
+boot1 <- Boot(fit_nlsLM, method = 'case')
+
+# look at the data
+head(boot1$t)
+
+
+# create predictions of each bootstrapped model
+boot1_preds <- boot1$t %>%
+  as.data.frame() %>%
+  drop_na() %>%
+  mutate(iter = 1:n()) %>%
+  group_by_all() %>%
+  do(data.frame(temp = seq(min(d.amb$temp), max(d.amb$temp), length.out = 100))) %>%
+  ungroup() %>%
+  mutate(pred = sharpeschoolhigh_1981(temp, r_tref, e, eh, th, tref = 28))
+
+# calculate bootstrapped confidence intervals
+boot1_conf_preds <- group_by(boot1_preds, temp) %>%
+  summarise(conf_lower = quantile(pred, 0.025),
+            conf_upper = quantile(pred, 0.975)) %>%
+  ungroup()
+
+# plot bootstrapped CIs
+p1 <- ggplot() +
+  geom_line(aes(temp, .fitted), amb.preds, col = 'blue') +
+  geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), boot1_conf_preds, fill = 'blue', alpha = 0.3) +
+  geom_point(aes(temp, rate), d.amb, size = 2, alpha = 0.5,col = 'blue') +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Growth rate',
+       title = 'Growth rate across temperatures')
+p1
+
+# # plot bootstrapped predictions
+# p2 <- ggplot() +
+#   geom_line(aes(temp, .fitted), amb.preds, col = 'blue') +
+#   geom_line(aes(temp, pred, group = iter), boot1_preds, col = 'blue', alpha = 0.007) +
+#   geom_point(aes(temp, rate), d.amb, size = 2, alpha = 0.5) +
+#   theme_bw(base_size = 12) +
+#   labs(x = 'Temperature (ºC)',
+#        y = 'Growth rate',
+#        title = 'Growth rate across temperatures')
+# 
+# p1 + p2
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
 # HIGH CURVE FIT
 d.high <- PRdata %>% group_by(Temperature,Treatment)%>%
     summarise(rate=abs) %>%
@@ -231,55 +313,19 @@ ggplot(dd,aes(temp, rate, color=Treatment)) +
        title = 'Respiration across temperatures')
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Model  
-
-Build ANOVA model and examine for Respiration across temperatures. Remove 8 and 18C temperatures.        
-```{r, results=TRUE, warning=FALSE, message=FALSE}
-model_data<-PRdata%>%
-   filter(!Temperature==18)%>%
-   filter(!Temperature==8)%>%
-   #filter(R.nmol.org.min<0)%>%
-  filter(R.nmol.org.min>-0.2)
-
-Rmodel1<-aov(R.nmol.org.min~Temperature*Treatment, data=model_data) #run as random
-summary(Rmodel1)
-```
-
-Check assumptions of model for residual normality and variance. 
-
-```{r, results=TRUE, warning=FALSE, message=FALSE}
-qqPlot(residuals(Rmodel1))
-leveneTest(residuals(Rmodel1)~as.factor(Temperature), data=model_data)
-```
-
-## Summary    
-
-Generate summary of respiration across temperatures.    
+#Bootstrapping the Curve Fit
 
 ```{r}
-summary<-PRdata%>%
-  group_by(Temperature)%>%
-  summarise(N=length(R.nmol.org.min),
-            Mean_R=mean(R.nmol.org.min), 
-            SE_R=sd(R.nmol.org.min)/sqrt(length(R.nmol.org.min)))
 
-summary
 
-summary%>%
-  write_csv(., "Pacu2021/Output/Respiration/TPC/mean_respiration.csv")
+
+
+
+
+
+
+
+
+
+
 ```
