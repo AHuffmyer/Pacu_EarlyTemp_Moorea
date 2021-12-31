@@ -178,12 +178,16 @@ Account for volume and substract blank values. Average blank calculated for each
 oxygen$R.umol.min <- oxygen$R.umol.L.min * oxygen$Volume #calculate
 
 blank_data <- subset(oxygen, Type == "Blank") #subset to blank data only
-plot(blank_data$R.umol.min , ylab="umol O2 min-1") #blanks during dark phase
+par(mfrow=c(2,2))
+plot(as.factor(blank_data$Run),blank_data$R.umol.min, ylab="umol O2 min-1", xlab="RUN Number") #blanks during dark phase
+plot(blank_data$Plate, blank_data$R.umol.min, ylab="umol O2 min-1",, xlab="Plate Number") #blanks during dark phase
+plot(blank_data$Temperature, blank_data$R.umol.min, ylab="umol O2 min-1",xlab="Temperature Level") #blanks during dark phase
+plot(as.factor(blank_data$Treatment), blank_data$R.umol.min, ylab="umol O2 min-1", xlab="Treatment") #blanks during dark phase
 
 #display mean blankvalues
 mean(blank_data$R.umol.min) #mean R phase blanks
 
-resp.blnk <- aggregate(R.umol.min ~ Date*Run, data=blank_data, mean) #calculate average blank during light for each run
+resp.blnk <- aggregate(R.umol.min ~ Date*Run, data=blank_data, mean) #calculate average blank for each run
 colnames(resp.blnk)[colnames(resp.blnk) == 'R.umol.min'] <- 'R.Blank.umol.min' #rename to specify blank for R
 
 oxygen <- full_join(oxygen, resp.blnk) #add R blanks to master
@@ -207,23 +211,22 @@ oxygen.bio$R.umol.org.min <- oxygen.bio$R.umol.min.corr/oxygen.bio$Org.Number #c
 oxygen.bio$R.nmol.org.min <- oxygen.bio$R.umol.org.min*1000 #calculate nanmoles 
 #oxygen.bio$R.nmol.total.min <- oxygen.bio$R.nmol.org.min*oxygen.bio$Org.Number #calculate total gross photosynthesis (not normalized to number of organisms) 
 
-#net photosynthesis
-#oxygen.bio$P.umol.org.min <- oxygen.bio$P.umol.min.corr/oxygen.bio$Org.Number #calculate oxygen per organism (larvae or recruit)
-#oxygen.bio$P.umol.org.min <- oxygen.bio$P.umol.org.sec*60 #calculate oxygen per organism per minute - not used in this script
-#oxygen.bio$P.nmol.org.min <- oxygen.bio$P.umol.org.min*1000 #calculate nanmoles 
-#oxygen.bio$P.nmol.total.min <- oxygen.bio$P.nmol.org.min*oxygen.bio$Org.Number #calculate total gross photosynthesis (not normalized to number of organisms) 
+#Save as .csv file.  
+write.csv(oxygen.bio, paste0("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates.csv", sep="")) #save final file
 
-#gross photosynthesis
-#oxygen.bio$GP.umol.min.corr <- oxygen.bio$P.umol.min.corr - oxygen.bio$R.umol.min.corr #calculate gross photosynthesis by subtracting out oxygen consumption from respiration
-#oxygen.bio$GP.umol.org.min <- oxygen.bio$GP.umol.min.corr/oxygen.bio$Org.Number #calculate oxygen per organism (larvae or recruit)
-#oxygen.bio$GP.umol.org.min <- oxygen.bio$GP.umol.org.sec*60 #calculate oxygen per organism per minute - not used in this script
-#oxygen.bio$GP.nmol.org.min <- oxygen.bio$GP.umol.org.min*1000 #calculate nanmoles 
-#oxygen.bio$GP.nmol.total.min <- oxygen.bio$GP.nmol.org.min*oxygen.bio$Org.Number #calculate total gross photosynthesis (not normalized to number of organisms) 
+
+#Visualize Data
+oxygen.bio2 <- oxygen.bio %>% filter(R.nmol.org.min<0)
+oxygen.bio2 <- oxygen.bio2 %>% filter(R.nmol.org.min>-0.15)
+
+#par(mfrow=c(2,2))
+plot(oxygen.bio2$Plate, oxygen.bio2$R.nmol.org.min , ylab="nmol O2 larva-1 min-1",xlab="Plate Number") #blanks during dark phase
+plot(oxygen.bio2$Temperature, oxygen.bio2$R.nmol.org.min , ylab="nmol O2 larva-1 min-1",xlab="Temperature") #blanks during dark phase
 ```
 
 Save as .csv file.  
 ```{r, warning=FALSE, message=FALSE}
-write.csv(oxygen.bio, paste0("Pacu2021/Output/Respiration/TPC/oxygen_P_R_calc.csv", sep="")) #save final file
+write.csv(oxygen.bio, paste0("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates_filtered.csv", sep="")) #save final file
 ```
 
 
