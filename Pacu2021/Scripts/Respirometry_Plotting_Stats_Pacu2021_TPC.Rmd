@@ -127,49 +127,11 @@ ggsave("Pacu2021/Figures/Respiration/TPC/Respiration.pdf", r_plot, dpi=300, w=8,
 #Padifeld et al **rTPC and nls.multstart: A new pipeline to fit thermal performance curves in r**
 ### https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13585
 
-```{r, results=TRUE, warning=FALSE, message=FALSE}
-# get_model_names()
-# 
-# d.amb <- PRdata %>% group_by(Temperature,Treatment)%>%
-#     summarise(Ratemean=mean(abs)) %>%
-#   filter(Treatment=="Ambient")
-# 
-# d.high <- PRdata %>% group_by(Temperature,Treatment)%>%
-#     summarise(Ratemean=mean(abs)) %>%
-#   filter(Treatment=="High")
+```{r}
 
-data("chlorella_tpc")
-d <- filter(chlorella_tpc, curve_id == 1)
-
-# choose model
-mod <- 'sharpschoolhigh_1981'
-
-# get start vals
-start_vals <- get_start_vals(d$temp,d$rate, model_name = 'sharpeschoolhigh_1981')
-start_vals
-
-# get limits
-low_lims <- get_lower_lims(d$temp,d$rate, model_name = 'sharpeschoolhigh_1981')
-low_lims
-upper_lims <- get_upper_lims(d$temp,d$rate, model_name = 'sharpeschoolhigh_1981')
-start_vals
-low_lims
-upper_lims
-
-fit <- nls_multstart(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 15),
-                                                     data = d,
-                                                     iter = 500,
-                                                     start_lower = start_vals - 1,
-                                                     start_upper = start_vals + 1,
-                                                     lower = low_lims,
-                                                     upper = upper_lims,
-                                                     supp_errors = 'Y')
-
-fit
-
-# AMBIENT CURVE
+# AMBIENT CURVE FIT
 d.amb <- PRdata %>% group_by(Temperature,Treatment)%>%
-    summarise(rate=mean(abs)) %>%
+    summarise(rate=abs) %>%
   mutate(temp=Temperature) %>%
   filter(Treatment=="Ambient")
 
@@ -200,9 +162,9 @@ amb.fit <- nls_multstart(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th,
 amb.fit
 
 
-# HIGH CURVE
+# HIGH CURVE FIT
 d.high <- PRdata %>% group_by(Temperature,Treatment)%>%
-    summarise(rate=mean(abs)) %>%
+    summarise(rate=abs) %>%
   mutate(temp=Temperature) %>%
   filter(Treatment=="High")
 
@@ -253,16 +215,34 @@ amb.preds <- augment(amb.fit, newdata = amb_new_data)
 high_new_data <- data.frame(temp = seq(min(d.high$temp), max(d.high$temp), 0.5))
 high.preds <- augment(high.fit, newdata = high_new_data)
 
+dd <- PRdata %>% group_by(Temperature,Treatment)%>%
+    summarise(rate=abs) %>%
+  mutate(temp=Temperature)
+
 # plot data and model fit
-ggplot(aes(temp, rate)) +
+ggplot(dd,aes(temp, rate, color=Treatment)) +
   geom_point() +
-  geom_line(aes(temp, .fitted), amb.preds, col = 'blue') +
-  geom_line(aes(temp, .fitted), high.preds, col = 'red') +
+  scale_color_manual(values=c('blue','red'))+
+  geom_line(aes(temp, .fitted), amb.preds, col = 'blue', size=2) +
+  geom_line(aes(temp, .fitted), high.preds, col = 'red', size=2) +
   theme_bw(base_size = 12) +
   labs(x = 'Temperature (ºC)',
        y = 'Metabolic rate',
        title = 'Respiration across temperatures')
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
