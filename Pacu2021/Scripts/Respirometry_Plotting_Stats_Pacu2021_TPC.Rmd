@@ -26,26 +26,32 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ## install packages if you dont already have them in your library
 if ("tidyverse" %in% rownames(installed.packages()) == 'FALSE') install.packages('tidyverse') 
 if ("car" %in% rownames(installed.packages()) == 'FALSE') install.packages('car') 
-if ("lme4" %in% rownames(installed.packages()) == 'FALSE') install.packages('lme4') 
-if ("lmerTest" %in% rownames(installed.packages()) == 'FALSE') install.packages('lmerTest') 
+#if ("lme4" %in% rownames(installed.packages()) == 'FALSE') install.packages('lme4') 
+#if ("lmerTest" %in% rownames(installed.packages()) == 'FALSE') install.packages('lmerTest') 
 if ("scales" %in% rownames(installed.packages()) == 'FALSE') install.packages('scales') 
 if ("cowplot" %in% rownames(installed.packages()) == 'FALSE') install.packages('cowplot') 
 if ("ggplot2" %in% rownames(installed.packages()) == 'FALSE') install.packages('ggplot2') 
-if ("effects" %in% rownames(installed.packages()) == 'FALSE') install.packages('effects') 
-if ("emmeans" %in% rownames(installed.packages()) == 'FALSE') install.packages('emmeans') 
-if ("multcomp" %in% rownames(installed.packages()) == 'FALSE') install.packages('multcomp') 
+#if ("effects" %in% rownames(installed.packages()) == 'FALSE') install.packages('effects') 
+#if ("emmeans" %in% rownames(installed.packages()) == 'FALSE') install.packages('emmeans') 
+#if ("multcomp" %in% rownames(installed.packages()) == 'FALSE') install.packages('multcomp') 
+if ("nls.multstart" %in% rownames(installed.packages()) == 'FALSE') install.packages('nls.multstart') 
+if ("broom" %in% rownames(installed.packages()) == 'FALSE') install.packages('broom') 
+if ("rTPC" %in% rownames(installed.packages()) == 'FALSE') remotes::install_github("padpadpadpad/rTPC")
 
 #load packages
 library("ggplot2")
 library("tidyverse")
 library('car')
-library('lme4')
-library('lmerTest')
+#library('lme4')
+#library('lmerTest')
 library('scales')
 library('cowplot')
-library('effects')
-library('emmeans')
-library('multcomp')
+#library('effects')
+#library('emmeans')
+#library('multcomp')
+library('nls.multstart')
+library('broom')
+library('rTPC')
 ```
 
 
@@ -71,6 +77,10 @@ PRdata$Run<-as.factor(PRdata$Run)
 View outliers.   
 ```{r, warning=FALSE, message=FALSE}
 boxplot(PRdata$R.nmol.org.min)
+
+PRdata <- PRdata %>% filter(R.nmol.org.min > -0.15) %>% filter(R.nmol.org.min < 0)
+
+boxplot(PRdata$R.nmol.org.min)
 ```
 
 # **Plotting**  
@@ -81,18 +91,18 @@ Plot data as a dot plot with curves.
 ```{r}
 
 PRdata$Temperature<-as.numeric(as.character(PRdata$Temperature))
-
-r_plot<-PRdata %>%
+PRdata <- PRdata %>%
     group_by(Temperature)%>%
     filter(!Temperature==18)%>%
     filter(!Temperature==8)%>%
     #filter(R.nmol.org.min<0)%>%
-    mutate(abs=abs(R.nmol.org.min))%>%
-    filter(abs<0.2)%>%
+    mutate(abs=abs(R.nmol.org.min))
+
+r_plot<-PRdata %>%
     ggplot(., aes(x = Temperature, y = abs, colour=Treatment)) +
     geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
     #geom_boxplot(aes(fill=Treatment, group=interaction(Temperature, Treatment)), alpha=0.5)+
-    geom_point(aes(fill=Treatment, group=interaction(Temperature, Treatment)), pch = 21, size=6, alpha=0.5, position = position_jitterdodge(0.3)) + 
+    geom_point(aes(fill=Treatment, group=interaction(Temperature, Treatment)), pch = 21, size=2, alpha=0.5, position = position_jitterdodge(0.3)) + 
    geom_smooth(method = "lm", se=FALSE, formula=y ~ poly(x, 3, raw=TRUE), size=3)+
     xlab("Temperature") + 
     scale_fill_manual(name="Treatment", values=c("blue","red"))+
@@ -108,10 +118,153 @@ r_plot<-PRdata %>%
       legend.text=element_text(size=12)
       ); r_plot
 
-ggsave("Pacu2021/Figures/Respiration/TPC/Respiration.pdf", r_plot, dpi=300, w=12, h=8, units="in")
+ggsave("Pacu2021/Figures/Respiration/TPC/Respiration.pdf", r_plot, dpi=300, w=8, h=8, units="in")
 ```
 
 # **Analysis**    
+
+## TPC ftting
+#Padifeld et al **rTPC and nls.multstart: A new pipeline to fit thermal performance curves in r**
+### https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13585
+
+```{r, results=TRUE, warning=FALSE, message=FALSE}
+# get_model_names()
+# 
+# d.amb <- PRdata %>% group_by(Temperature,Treatment)%>%
+#     summarise(Ratemean=mean(abs)) %>%
+#   filter(Treatment=="Ambient")
+# 
+# d.high <- PRdata %>% group_by(Temperature,Treatment)%>%
+#     summarise(Ratemean=mean(abs)) %>%
+#   filter(Treatment=="High")
+
+data("chlorella_tpc")
+d <- filter(chlorella_tpc, curve_id == 1)
+
+# choose model
+mod <- 'sharpschoolhigh_1981'
+
+# get start vals
+start_vals <- get_start_vals(d$temp,d$rate, model_name = 'sharpeschoolhigh_1981')
+start_vals
+
+# get limits
+low_lims <- get_lower_lims(d$temp,d$rate, model_name = 'sharpeschoolhigh_1981')
+low_lims
+upper_lims <- get_upper_lims(d$temp,d$rate, model_name = 'sharpeschoolhigh_1981')
+start_vals
+low_lims
+upper_lims
+
+fit <- nls_multstart(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 15),
+                                                     data = d,
+                                                     iter = 500,
+                                                     start_lower = start_vals - 1,
+                                                     start_upper = start_vals + 1,
+                                                     lower = low_lims,
+                                                     upper = upper_lims,
+                                                     supp_errors = 'Y')
+
+fit
+
+# AMBIENT CURVE
+d.amb <- PRdata %>% group_by(Temperature,Treatment)%>%
+    summarise(rate=mean(abs)) %>%
+  mutate(temp=Temperature) %>%
+  filter(Treatment=="Ambient")
+
+# choose model
+mod <- 'sharpschoolhigh_1981'
+
+# get start vals
+amb.start_vals <- get_start_vals(d.amb$temp,d.amb$rate, model_name = 'sharpeschoolhigh_1981')
+amb.start_vals
+
+# get limits
+amb.low_lims <- get_lower_lims(d.amb$temp,d.amb$rate, model_name = 'sharpeschoolhigh_1981')
+amb.low_lims
+amb.upper_lims <- get_upper_lims(d.amb$temp,d.amb$rate, model_name = 'sharpeschoolhigh_1981')
+amb.start_vals
+amb.low_lims
+amb.upper_lims
+
+amb.fit <- nls_multstart(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 28),
+                                                     data = d.amb,
+                                                     iter = 500,
+                                                     start_lower = amb.start_vals - 1,
+                                                     start_upper = amb.start_vals + 1,
+                                                     lower = amb.low_lims,
+                                                     upper = amb.upper_lims,
+                                                     supp_errors = 'Y')
+
+amb.fit
+
+
+# HIGH CURVE
+d.high <- PRdata %>% group_by(Temperature,Treatment)%>%
+    summarise(rate=mean(abs)) %>%
+  mutate(temp=Temperature) %>%
+  filter(Treatment=="High")
+
+# choose model
+mod <- 'sharpschoolhigh_1981'
+
+# get start vals
+high.start_vals <- get_start_vals(d.high$temp,d.high$rate, model_name = 'sharpeschoolhigh_1981')
+high.start_vals
+
+# get limits
+high.low_lims <- get_lower_lims(d.high$temp,d.high$rate, model_name = 'sharpeschoolhigh_1981')
+high.low_lims
+high.upper_lims <- get_upper_lims(d.high$temp,d.high$rate, model_name = 'sharpeschoolhigh_1981')
+high.start_vals
+high.low_lims
+high.upper_lims
+
+high.fit <- nls_multstart(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 28),
+                                                     data = d.high,
+                                                     iter = 500,
+                                                     start_lower = high.start_vals - 1,
+                                                     start_upper = high.start_vals + 1,
+                                                     lower = high.low_lims,
+                                                     upper = high.upper_lims,
+                                                     supp_errors = 'Y')
+
+high.fit
+
+amb.TCP.res <- calc_params(amb.fit) %>%
+  mutate_all(round, 2)   # round for easy viewing
+
+high.TCP.res <- calc_params(high.fit) %>%
+  mutate_all(round, 2)   # round for easy viewing
+
+amb.TCP.res
+high.TCP.res
+
+```
+
+
+```{r}
+
+# predict new data
+amb_new_data <- data.frame(temp = seq(min(d.amb$temp), max(d.amb$temp), 0.5))
+amb.preds <- augment(amb.fit, newdata = amb_new_data)
+
+high_new_data <- data.frame(temp = seq(min(d.high$temp), max(d.high$temp), 0.5))
+high.preds <- augment(high.fit, newdata = high_new_data)
+
+# plot data and model fit
+ggplot(aes(temp, rate)) +
+  geom_point() +
+  geom_line(aes(temp, .fitted), amb.preds, col = 'blue') +
+  geom_line(aes(temp, .fitted), high.preds, col = 'red') +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Metabolic rate',
+       title = 'Respiration across temperatures')
+```
+
+
 
 ## Model  
 
