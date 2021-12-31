@@ -26,14 +26,8 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ## install packages if you dont already have them in your library
 if ("tidyverse" %in% rownames(installed.packages()) == 'FALSE') install.packages('tidyverse') 
 if ("car" %in% rownames(installed.packages()) == 'FALSE') install.packages('car') 
-#if ("lme4" %in% rownames(installed.packages()) == 'FALSE') install.packages('lme4') 
-#if ("lmerTest" %in% rownames(installed.packages()) == 'FALSE') install.packages('lmerTest') 
 if ("scales" %in% rownames(installed.packages()) == 'FALSE') install.packages('scales') 
-if ("cowplot" %in% rownames(installed.packages()) == 'FALSE') install.packages('cowplot') 
 if ("ggplot2" %in% rownames(installed.packages()) == 'FALSE') install.packages('ggplot2') 
-#if ("effects" %in% rownames(installed.packages()) == 'FALSE') install.packages('effects') 
-#if ("emmeans" %in% rownames(installed.packages()) == 'FALSE') install.packages('emmeans') 
-#if ("multcomp" %in% rownames(installed.packages()) == 'FALSE') install.packages('multcomp') 
 if ("nls.multstart" %in% rownames(installed.packages()) == 'FALSE') install.packages('nls.multstart') 
 if ("broom" %in% rownames(installed.packages()) == 'FALSE') install.packages('broom') 
 if ("rTPC" %in% rownames(installed.packages()) == 'FALSE') remotes::install_github("padpadpadpad/rTPC")
@@ -42,13 +36,7 @@ if ("rTPC" %in% rownames(installed.packages()) == 'FALSE') remotes::install_gith
 library("ggplot2")
 library("tidyverse")
 library('car')
-#library('lme4')
-#library('lmerTest')
 library('scales')
-library('cowplot')
-#library('effects')
-#library('emmeans')
-#library('multcomp')
 library('nls.multstart')
 library('broom')
 library('rTPC')
@@ -92,23 +80,21 @@ Plot data as a dot plot with curves.
 
 PRdata$Temperature<-as.numeric(as.character(PRdata$Temperature))
 PRdata <- PRdata %>%
-    group_by(Temperature)%>%
+    group_by(Temperature,Treatment)%>%
     filter(!Temperature==18)%>%
     filter(!Temperature==8)%>%
-    #filter(R.nmol.org.min<0)%>%
-    mutate(abs=abs(R.nmol.org.min))
+    mutate(abs=abs(R.nmol.org.min))%>%
+  summarise(rate=abs) %>%
+  mutate(temp=Temperature)
 
 r_plot<-PRdata %>%
-    ggplot(., aes(x = Temperature, y = abs, colour=Treatment)) +
-    geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
-    #geom_boxplot(aes(fill=Treatment, group=interaction(Temperature, Treatment)), alpha=0.5)+
+    ggplot(., aes(x = Temperature, y = rate, colour=Treatment)) +
     geom_point(aes(fill=Treatment, group=interaction(Temperature, Treatment)), pch = 21, size=2, alpha=0.5, position = position_jitterdodge(0.3)) + 
-   geom_smooth(method = "lm", se=FALSE, formula=y ~ poly(x, 3, raw=TRUE), size=3)+
+   #geom_smooth(method = "lm", se=FALSE, formula=y ~ poly(x, 3, raw=TRUE), size=3)+
     xlab("Temperature") + 
     scale_fill_manual(name="Treatment", values=c("blue","red"))+
     scale_color_manual(name="Treatment", values=c("blue","red"))+
     ylab(expression(bold(paste("R (nmol ", O[2], " larva"^-1, "min"^-1, ")")))) +
-    #scale_y_continuous(limits=c(-0.2, 0.06), labels = scales::number_format(accuracy = 0.01, decimal.mark = '.'))+
     theme_classic() + 
     theme(
       legend.position="none",
@@ -118,7 +104,7 @@ r_plot<-PRdata %>%
       legend.text=element_text(size=12)
       ); r_plot
 
-ggsave("Pacu2021/Figures/Respiration/TPC/Respiration.pdf", r_plot, dpi=300, w=8, h=8, units="in")
+ggsave("Pacu2021/Figures/Respiration/TPC/Respiration_Scatter.pdf", r_plot, dpi=300, w=8, h=8, units="in")
 ```
 
 # **Analysis**    
@@ -129,9 +115,7 @@ ggsave("Pacu2021/Figures/Respiration/TPC/Respiration.pdf", r_plot, dpi=300, w=8,
 
 ```{r}
 # AMBIENT CURVE FIT
-d.amb <- PRdata %>% group_by(Temperature,Treatment)%>%
-    summarise(rate=abs) %>%
-  mutate(temp=Temperature) %>%
+d.amb <- PRdata %>% 
   filter(Treatment=="Ambient")
 
 # choose model
@@ -174,9 +158,10 @@ amb.TCP.res
 
 
 # BOOTSTRAPPING AMBIENT CURVE FIT
+Resampling the original data with replacement
 ```{r}
 # refit model using nlsLM
-fit_nlsLM <- minpack.lm::nlsLM(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 28),
+amb.fit_nlsLM <- minpack.lm::nlsLM(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 28),
                         data = d.amb,
                         start = coef(amb.fit),
                         lower = amb.low_lims,
@@ -184,14 +169,14 @@ fit_nlsLM <- minpack.lm::nlsLM(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,
                         weights = rep(1, times = nrow(d.amb)))
 
 # bootstrap using case resampling
-boot1 <- Boot(fit_nlsLM, method = 'case')
+amb.boot1 <- Boot(amb.fit_nlsLM, method = 'case')
 
 # look at the data
-head(boot1$t)
+head(amb.boot1$t)
 
 
 # create predictions of each bootstrapped model
-boot1_preds <- boot1$t %>%
+amb.boot1_preds <- amb.boot1$t %>%
   as.data.frame() %>%
   drop_na() %>%
   mutate(iter = 1:n()) %>%
@@ -201,53 +186,28 @@ boot1_preds <- boot1$t %>%
   mutate(pred = sharpeschoolhigh_1981(temp, r_tref, e, eh, th, tref = 28))
 
 # calculate bootstrapped confidence intervals
-boot1_conf_preds <- group_by(boot1_preds, temp) %>%
+amb.boot1_conf_preds <- group_by(amb.boot1_preds, temp) %>%
   summarise(conf_lower = quantile(pred, 0.025),
             conf_upper = quantile(pred, 0.975)) %>%
   ungroup()
 
 # plot bootstrapped CIs
-p1 <- ggplot() +
+amb.CI.plot <- ggplot() +
   geom_line(aes(temp, .fitted), amb.preds, col = 'blue') +
-  geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), boot1_conf_preds, fill = 'blue', alpha = 0.3) +
+  geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), amb.boot1_conf_preds, fill = 'blue', alpha = 0.3) +
   geom_point(aes(temp, rate), d.amb, size = 2, alpha = 0.5,col = 'blue') +
   theme_bw(base_size = 12) +
   labs(x = 'Temperature (ºC)',
-       y = 'Growth rate',
-       title = 'Growth rate across temperatures')
-p1
+       y = 'Respiration Rate (nmol O2/larva/min')
+amb.CI.plot 
 
-# # plot bootstrapped predictions
-# p2 <- ggplot() +
-#   geom_line(aes(temp, .fitted), amb.preds, col = 'blue') +
-#   geom_line(aes(temp, pred, group = iter), boot1_preds, col = 'blue', alpha = 0.007) +
-#   geom_point(aes(temp, rate), d.amb, size = 2, alpha = 0.5) +
-#   theme_bw(base_size = 12) +
-#   labs(x = 'Temperature (ºC)',
-#        y = 'Growth rate',
-#        title = 'Growth rate across temperatures')
-# 
-# p1 + p2
 
 ```
 
 
-
-
-
-
-
-
-
-
-
-
-
 ```{r}
 # HIGH CURVE FIT
-d.high <- PRdata %>% group_by(Temperature,Treatment)%>%
-    summarise(rate=abs) %>%
-  mutate(temp=Temperature) %>%
+d.high <- PRdata %>% 
   filter(Treatment=="High")
 
 # choose model
@@ -276,56 +236,133 @@ high.fit <- nls_multstart(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th
 
 high.fit
 
-amb.TCP.res <- calc_params(amb.fit) %>%
-  mutate_all(round, 2)   # round for easy viewing
-
-high.TCP.res <- calc_params(high.fit) %>%
-  mutate_all(round, 2)   # round for easy viewing
-
-amb.TCP.res
-high.TCP.res
-
-```
-
-
-```{r}
-
-# predict new data
-amb_new_data <- data.frame(temp = seq(min(d.amb$temp), max(d.amb$temp), 0.5))
-amb.preds <- augment(amb.fit, newdata = amb_new_data)
 
 high_new_data <- data.frame(temp = seq(min(d.high$temp), max(d.high$temp), 0.5))
 high.preds <- augment(high.fit, newdata = high_new_data)
 
-dd <- PRdata %>% group_by(Temperature,Treatment)%>%
-    summarise(rate=abs) %>%
-  mutate(temp=Temperature)
 
-# plot data and model fit
-ggplot(dd,aes(temp, rate, color=Treatment)) +
-  geom_point() +
-  scale_color_manual(values=c('blue','red'))+
-  geom_line(aes(temp, .fitted), amb.preds, col = 'blue', size=2) +
-  geom_line(aes(temp, .fitted), high.preds, col = 'red', size=2) +
+high.TCP.res <- calc_params(high.fit) %>%
+  mutate_all(round, 2)   # round for easy viewing
+
+high.TCP.res 
+
+```
+
+# BOOTSTRAPPING HIGH CURVE FIT
+Resampling the original data with replacement
+```{r}
+# refit model using nlsLM
+high.fit_nlsLM <- minpack.lm::nlsLM(rate~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 28),
+                        data = d.high,
+                        start = coef(high.fit),
+                        lower = high.low_lims,
+                        upper = high.upper_lims,
+                        weights = rep(1, times = nrow(d.high)))
+
+# bootstrap using case resampling
+high.boot1 <- Boot(high.fit_nlsLM, method = 'case')
+
+# look at the data
+head(high.boot1$t)
+
+
+# create predictions of each bootstrapped model
+high.boot1_preds <- high.boot1$t %>%
+  as.data.frame() %>%
+  drop_na() %>%
+  mutate(iter = 1:n()) %>%
+  group_by_all() %>%
+  do(data.frame(temp = seq(min(d.high$temp), max(d.high$temp), length.out = 100))) %>%
+  ungroup() %>%
+  mutate(pred = sharpeschoolhigh_1981(temp, r_tref, e, eh, th, tref = 28))
+
+# calculate bootstrapped confidence intervals
+high.boot1_conf_preds <- group_by(high.boot1_preds, temp) %>%
+  summarise(conf_lower = quantile(pred, 0.025),
+            conf_upper = quantile(pred, 0.975)) %>%
+  ungroup()
+
+# plot bootstrapped CIs
+high.CI.plot <- ggplot() +
+  geom_line(aes(temp, .fitted), high.preds, col = 'red') +
+  geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), high.boot1_conf_preds, fill = 'red', alpha = 0.3) +
+  geom_point(aes(temp, rate), d.high, size = 2, alpha = 0.5,col = 'red') +
   theme_bw(base_size = 12) +
   labs(x = 'Temperature (ºC)',
-       y = 'Metabolic rate',
-       title = 'Respiration across temperatures')
-```
+       y = 'Respiration Rate (nmol O2/larva/min')
+high.CI.plot
 
-#Bootstrapping the Curve Fit
+```
 
 ```{r}
-
-
-
-
-
-
-
-
-
-
-
+ 
+# plot data and model fit
+ggplot() +
+   geom_point(aes(temp, rate), d.amb, size = 2, alpha = 0.5,col = 'blue') +
+   geom_point(aes(temp, rate), d.high, size = 2, alpha = 0.5,col = 'red') +
+   geom_line(aes(temp, .fitted), amb.preds, col = 'blue', size=2) +
+   geom_line(aes(temp, .fitted), high.preds, col = 'red', size=2) +
+   geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), high.boot1_conf_preds, fill = 'red', alpha = 0.3) +
+   geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), amb.boot1_conf_preds, fill = 'blue', alpha = 0.3) +
+   theme_bw(base_size = 12) +
+   labs(x = 'Temperature (ºC)',
+        y = 'Metabolic rate',
+        title = 'Respiration across temperatures')
 
 ```
+
+#confidence intervals of TPC parameters 
+# WORK IN PROGRESS 
+```{r}
+ 
+broom::tidy(amb.fit_nlsLM)
+broom::tidy(high.fit_nlsLM)
+
+#AMBIENT
+amb.extra_params <- calc_params(amb.fit_nlsLM) %>%
+  pivot_longer(everything(), names_to =  'param', values_to = 'estimate')
+
+amb.ci_extra_params <- Boot(amb.fit_nlsLM, f = function(x){unlist(calc_params(x))}, labels = names(calc_params(amb.fit_nlsLM)), R = 200, method = 'case') %>%
+  confint(., method = 'bca') %>%
+  as.data.frame() %>%
+  rename(conf_lower = 1, conf_upper = 2) %>%
+  rownames_to_column(., var = 'param') %>%
+  mutate(method = 'case bootstrap')
+  
+amb.ci_extra_params <- left_join(amb.ci_extra_params, amb.extra_params)
+amb.ci_extra_params$Treatment <- "Ambient"
+# Joining, by = "param"
+
+
+#HIGH
+high.extra_params <- calc_params(high.fit_nlsLM) %>%
+  pivot_longer(everything(), names_to =  'param', values_to = 'estimate')
+
+high.ci_extra_params <- Boot(high.fit_nlsLM, f = function(x){unlist(calc_params(x))}, labels = names(calc_params(high.fit_nlsLM)), R = 200, method = 'case') %>%
+  confint(., method = 'bca') %>%
+  as.data.frame() %>%
+  rename(conf_lower = 1, conf_upper = 2) %>%
+  rownames_to_column(., var = 'param') %>%
+  mutate(method = 'case bootstrap')
+  
+high.ci_extra_params <- left_join(high.ci_extra_params, high.extra_params)
+high.ci_extra_params$Treatment <- "High"
+
+#Join Ambient and High estimates and CIs
+
+All_params <- rbind(amb.ci_extra_params, high.ci_extra_params)
+
+
+#Plot
+ggplot(All_params, aes(Treatment, estimate)) +
+  geom_point(size = 2) +
+  geom_linerange(aes(ymin = conf_lower, ymax = conf_upper)) +
+  theme_bw() +
+  facet_wrap(~param, scales = 'free_y') +
+  scale_x_discrete('') +
+  labs(title = 'TPC metrics',
+       subtitle = 'case resampling')
+
+
+
+``` 
