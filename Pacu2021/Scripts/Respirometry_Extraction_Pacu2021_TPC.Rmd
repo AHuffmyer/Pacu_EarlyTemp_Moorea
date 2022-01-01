@@ -94,6 +94,40 @@ starttimes<-read.csv("Pacu2021/Data/Respiration/TPC/starttimes_TPC.csv") #read i
 rtime<-5#starttimes$Rtime #list respiration start times. For respiration measurements, filter as > than this time
 ```
 
+
+Calculate mean temperature values for each run by calculating mean temperature in loops and generating a new temperature metadata file.  
+
+```{r, results=FALSE, warning=FALSE, message=FALSE}
+
+Temp.R <- data.frame(matrix(NA, ncol=3))
+colnames(Temp.R) <- c("Date", "Run","temp")
+
+Temp.Rb <- data.frame(matrix(NA, ncol=3))
+colnames(Temp.Rb) <- c("Date", "Run", "temp")
+
+for(i in 1:length(file.names)) { # for every file in list start at the first and run this following function
+  Resp.Data <-read.table(file.path(path.p,file.names[i]), skip = 56, header=T, sep=",", na.string="NA", fill = TRUE, as.is=TRUE, fileEncoding="latin1") #reads in the data files
+  Resp.Data$Temp <- Resp.Data[,31] #assigns temp column
+  #Resp.Data$Time.Min <- seq.int(0.017, (nrow(Resp.Data))*0.25, by = 0.25) #set time in min
+  Resp.Data$Time.Min. <- seq.int(from=0, to=((nrow(Resp.Data)*0.25)-0.25), by = 0.25) #set time in min
+  Resp.Data <- Resp.Data %>% filter(Time.Min. > rtime) #filters data by phase (respiration only with first X minutes removed as indicated by rtime), can specify rtime[i] if times are different for each file 
+  mean.temp <- round(mean(Resp.Data$Temp),2)
+  
+  Temp.Rb[,1] <- as.character(date[i]) #stores the date
+  Temp.Rb[,2] <- as.character(run[i]) #stores the run number
+  Temp.Rb[,3] <- mean.temp
+  
+  Temp.R <- rbind(Temp.R, Temp.Rb) #bind final data frame
+
+}
+
+#export file for use later on 
+Temp.R <- Temp.R[-1,] #remove empty column
+
+write.csv(Temp.R, paste0("Pacu2021/Output/Respiration/TPC/actual_temps.csv", sep="")) 
+```
+
+
 Run loop to extract slopes from respiration data. Subset for respiration data by filtering time >= respiration start time. Remove first 5 minutes of each run.  
 
 ```{r, results=FALSE, warning=FALSE, message=FALSE}
