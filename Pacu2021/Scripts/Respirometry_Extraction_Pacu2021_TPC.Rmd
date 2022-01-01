@@ -73,21 +73,14 @@ Generate respiration data frames.
 ```{r, warning=FALSE, message=FALSE}
 #generate a 6 column dataframe with specific column names
 #respiration
-Resp.R <- data.frame(matrix(NA, ncol=6))
+Resp.R <- data.frame(matrix(NA, ncol=7))
 colnames(Resp.R) <- c("Date", "Run","Sample.ID","Chamber.ID","Intercept", "umol.L.min")
 
-Resp.Rb <- data.frame(matrix(NA, ncol=6))
+Resp.Rb <- data.frame(matrix(NA, ncol=7))
 colnames(Resp.Rb) <- c("Date", "Run","Sample.ID","Chamber.ID","Intercept", "umol.L.min")
-
-#photosynthesis 
-Photo.R <- data.frame(matrix(NA, ncol=6))
-colnames(Photo.R) <- c("Date", "Run","Sample.ID","Chamber.ID","Intercept", "umol.L.min")
-
-Photo.Rb <- data.frame(matrix(NA, ncol=6))
-colnames(Photo.Rb) <- c("Date", "Run", "Sample.ID","Chamber.ID","Intercept", "umol.L.min")
 ```
 
-Load in the sample information file. It is important to have chambers in the order "A1, B1, C1, D1", rather than "A1, A2, A3, A4".  
+Load in the sample information file. It is required to have chambers in the order "A1, B1, C1, D1"..., and NOT in the order "A1, A2, A3, A4"....  
 
 ```{r, warning=FALSE, message=FALSE}
 Sample.Info<-read.csv("Pacu2021/Data/Respiration/TPC/Resp_Sample_Info_TPC.csv") #information on life stage, number of individuals, runs, etc.
@@ -98,24 +91,26 @@ date <- str_sub(file.names, 1, str_length(file.names)-29) #grab date from file n
 
 #load in respiration start times as a list the same length as the number of files
 starttimes<-read.csv("Pacu2021/Data/Respiration/TPC/starttimes_TPC.csv") #read in file of starting R and P phase times
-rtime<-starttimes$Rtime #list respiration start times. For respiration measurements, filter as > than this time
-ptime<-starttimes$Ptime #for photosynthesis, filter as < than this time
+rtime<-5#starttimes$Rtime #list respiration start times. For respiration measurements, filter as > than this time
 ```
 
-Run loop to extract slopes from respiration data. Subset for respiration data by filtering time >= respiration start time. Start and end time datasheet has removed first 5 minutes of each run to allow for temp equilibration.  
+Run loop to extract slopes from respiration data. Subset for respiration data by filtering time >= respiration start time. Start and end time datasheet has removed first 3 minutes of each run to allow for temp equilibration.  
 
 ```{r, results=FALSE, warning=FALSE, message=FALSE}
 for(i in 1:length(file.names)) { # for every file in list start at the first and run this following function
-  Resp.Data <-read.table(file.path(path.p,file.names[i]), skip = 72, header=T, sep=",", na.string="NA", fill = TRUE, as.is=TRUE, fileEncoding="latin1") #reads in the data files
+  Resp.Data <-read.table(file.path(path.p,file.names[i]), skip = 56, header=T, sep=",", na.string="NA", fill = TRUE, as.is=TRUE, fileEncoding="latin1") #reads in the data files
   Resp.Data$Temp <- Resp.Data[,31] #assigns temp column
-  Resp.Data$Time.Min <- seq.int(0.017, (nrow(Resp.Data))*0.25, by = 0.25) #set time in min
-  Resp.Data <- Resp.Data %>% #filters data by phase (respiration only)
-     filter(Time.Min > rtime[i])
+  mean.temp <- round(mean(Resp.Data$Temp),2)
+  mean.temp
+  #Resp.Data$Time.Min <- seq.int(0.017, (nrow(Resp.Data))*0.25, by = 0.25) #set time in min
+  Resp.Data$Time.Min. <- seq.int(from=0, to=((nrow(Resp.Data)*0.25)-0.25), by = 0.25) #set time in min
+  Resp.Data <- Resp.Data %>% #filters data by phase (respiration only with first X minutes removed as indicated by rtime)
+     filter(Time.Min. > rtime) #rtime[i]
   Resp.Data.N <- Resp.Data[,3:25] #subset desired columns
   
   for(j in 1:(ncol(Resp.Data.N))){
     model <- rankLocReg(
-      xall=Resp.Data$Time.Min, yall=as.numeric(Resp.Data.N[, j]), 
+      xall=Resp.Data$Time.Min., yall=as.numeric(Resp.Data.N[, j]), 
       alpha=0.4, method="pc", verbose=TRUE) #extract slopes, percentile rank method with minimum window size of 0.4. This means that in order to fit a slope, it has to encompass at least 40% of available datapoints. 
     
     pdf(paste0("Pacu2021/Output/Respiration/TPC/RespirationPlots/",date[i], "_",run[i],"_",rename[j],"_regression_trunc.pdf")) #generate output file names
@@ -134,7 +129,7 @@ for(i in 1:length(file.names)) { # for every file in list start at the first and
 
 ```
 
-Removed column B6 due to missing sensor. This column had to be removed from data sheets due to 'no sensor' reading that stops the code.   
+Removed well B6 manually due to missing sensor. This column had to be removed manually from data sheets due to 'no sensor' reading that stops the code.   
 Save respiration data frames.  
 
 ```{r, results=FALSE, warning=FALSE, message=FALSE}
@@ -165,10 +160,10 @@ colnames(oxygen)[colnames(oxygen) == 'umol.L.min'] <- 'R.umol.L.min' #rename to 
 Remove wells that slope extraction does not match data (multiple peaks, wells with issues).  
 
 ```{r}
-oxygen$code<-paste(oxygen$Run, oxygen$Chamber.ID)
-remove<-c("2 A1", "2 C1", "3 A4", "4 D3", "6 A3", "6 B3", "7 C4", "8 D1", "B A2", "C A1", "C A2")
-oxygen<-oxygen%>%
-  filter(!code %in% remove)
+# oxygen$code<-paste(oxygen$Run, oxygen$Chamber.ID)
+# remove<-c("2 A1", "2 C1", "3 A4", "4 D3", "6 A3", "6 B3", "7 C4", "8 D1", "B A2", "C A1", "C A2")
+# oxygen<-oxygen%>%
+#   filter(!code %in% remove)
 ```
 
 
@@ -184,7 +179,7 @@ plot(blank_data$Plate, blank_data$R.umol.min, ylab="umol O2 min-1",, xlab="Plate
 plot(blank_data$Temperature, blank_data$R.umol.min, ylab="umol O2 min-1",xlab="Temperature Level") #blanks during dark phase
 plot(as.factor(blank_data$Treatment), blank_data$R.umol.min, ylab="umol O2 min-1", xlab="Treatment") #blanks during dark phase
 
-#display mean blankvalues
+#display mean blank value
 mean(blank_data$R.umol.min) #mean R phase blanks
 
 resp.blnk <- aggregate(R.umol.min ~ Date*Run, data=blank_data, mean) #calculate average blank for each run
@@ -216,17 +211,18 @@ write.csv(oxygen.bio, paste0("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates.
 
 
 #Visualize Data
-oxygen.bio2 <- oxygen.bio %>% filter(R.nmol.org.min<0)
-oxygen.bio2 <- oxygen.bio2 %>% filter(R.nmol.org.min>-0.15)
+#oxygen.bio2 <- oxygen.bio %>% filter(R.nmol.org.min<0)
+#oxygen.bio2 <- oxygen.bio2 %>% filter(R.nmol.org.min>-0.15)
 
 #par(mfrow=c(2,2))
-plot(oxygen.bio2$Plate, oxygen.bio2$R.nmol.org.min , ylab="nmol O2 larva-1 min-1",xlab="Plate Number") #blanks during dark phase
-plot(oxygen.bio2$Temperature, oxygen.bio2$R.nmol.org.min , ylab="nmol O2 larva-1 min-1",xlab="Temperature") #blanks during dark phase
+plot(oxygen.bio$Plate, oxygen.bio$R.nmol.org.min , ylab="nmol O2 larva-1 min-1",xlab="Plate Number") #blanks during dark phase
+plot(oxygen.bio$Temperature, oxygen.bio$R.nmol.org.min , ylab="nmol O2 larva-1 min-1",xlab="Temperature") #blanks during dark phase
 ```
 
 Save as .csv file.  
 ```{r, warning=FALSE, message=FALSE}
-write.csv(oxygen.bio, paste0("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates_filtered.csv", sep="")) #save final file
+#write.csv(oxygen.bio, paste0("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates_filtered.csv", sep="")) #save final file
+write.csv(oxygen.bio, paste0("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates.csv", sep="")) #save final file
 ```
 
 
