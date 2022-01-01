@@ -31,6 +31,7 @@ if ("ggplot2" %in% rownames(installed.packages()) == 'FALSE') install.packages('
 if ("nls.multstart" %in% rownames(installed.packages()) == 'FALSE') install.packages('nls.multstart') 
 if ("broom" %in% rownames(installed.packages()) == 'FALSE') install.packages('broom') 
 if ("rTPC" %in% rownames(installed.packages()) == 'FALSE') remotes::install_github("padpadpadpad/rTPC")
+if ("ggstatsplot" %in% rownames(installed.packages()) == 'FALSE') remotes::install_github("IndrajeetPatil/ggstatsplot")
 
 #load packages
 library("ggplot2")
@@ -111,6 +112,7 @@ ggsave("Pacu2021/Figures/Respiration/TPC/Removed_outliersbygroup.pdf", outlier.r
 ```
 
 # **Plotting**  
+
 Plot data as a dot plot
 ```{r}
 
@@ -203,12 +205,12 @@ ggsave("Pacu2021/Figures/Respiration/TPC/Removed_outliersbygroup2.pdf", outlier.
 ```
 
 
-
 # **Analysis**    
 
-## TPC ftting
-#Padifeld et al **rTPC and nls.multstart: A new pipeline to fit thermal performance curves in r**
-### https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13585
+## **TPC ftting**  
+
+Padifeld et al **rTPC and nls.multstart: A new pipeline to fit thermal performance curves in r**  
+https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.13585  
 
 ```{r}
 
@@ -267,7 +269,8 @@ amb.TCP.res
 ```
 
 
-# BOOTSTRAPPING AMBIENT CURVE FIT
+### Bootstrapping ambient curve fit    
+
 Resampling the original data with replacement
 ```{r}
 # refit model using nlsLM
@@ -358,7 +361,8 @@ high.TCP.res
 
 ```
 
-# BOOTSTRAPPING HIGH CURVE FIT
+### Bootstrapping high curve fit   
+
 Resampling the original data with replacement
 ```{r}
 # refit model using nlsLM
@@ -424,7 +428,8 @@ ggsave("Pacu2021/Figures/Respiration/TPC/TPC_SharpSchool.pdf", TPC.plot, dpi=300
 
 ```
 
-#confidence intervals of TPC parameters 
+### Confidence intervals of TPC parameters   
+
 ```{r}
  
 broom::tidy(amb.fit_nlsLM)
@@ -481,7 +486,8 @@ ggsave("Pacu2021/Figures/Respiration/TPC/TPC_estimates_SharpSchool.pdf", estimat
 ``` 
 
 
-#Gaussian
+### Gaussian curve fitting  
+
 ```{r}
 #AMBIENT
 amb.gaus.fit <- nls_multstart(rate~gaussian_1987(temp = temp, rmax, topt, a),
@@ -627,7 +633,8 @@ high.TCP.res
 
 ```
 
-#confidence intervals of Gaussian TPC parameters 
+### Confidence intervals of Gaussian TPC parameters  
+
 ```{r}
  
 broom::tidy(amb.gaus.fit_nlsLM)
