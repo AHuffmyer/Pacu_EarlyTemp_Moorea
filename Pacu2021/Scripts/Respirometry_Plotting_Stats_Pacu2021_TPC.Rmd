@@ -52,6 +52,17 @@ Load data from LoLinR.
 PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates.csv") #load data
 ```
 
+Load temperatures calculated as the average of temperatures measured by the SDR plates. These are the temperatures that will be used for all analyses below.    
+
+```{r}
+#load actual temps data generated from extraction script  
+actual_temps<-read.csv("Pacu2021/Output/Respiration/TPC/actual_temps.csv", header=TRUE, sep=",")
+
+#format run column to match PRdata 
+actual_temps$Run<-gsub("Run","",as.character(actual_temps$Run))
+actual_temps$Run<-as.factor(actual_temps$Run)
+```
+
 Format data columns.  
 ```{r, warning=FALSE, message=FALSE}
 #remove all rows of wells that did not have samples or blanks
@@ -64,6 +75,11 @@ PRdata$Treatment<-as.factor(PRdata$Treatment)
 PRdata$Plate<-as.factor(PRdata$Plate)
 PRdata$Run<-as.factor(PRdata$Run)
 
+#pull in temperature data for actual temperatures  
+PRdata$code<-paste(PRdata$Date, PRdata$Run)
+actual_temps$code<-paste(actual_temps$Date, actual_temps$Run)
+
+PRdata$Temperature<-actual_temps$temp[match(PRdata$code, actual_temps$code)]
 
 PRdata <- PRdata %>%
     group_by(Temperature,Treatment)%>%
@@ -73,13 +89,6 @@ PRdata <- PRdata %>%
 
 PRdata$group <- paste0(PRdata$Temperature,"_", PRdata$Treatment)
 ```
-
-Assign temperatures as the average of temperatures measured by the SDR plates.  
-
-
-
-
-
 
 View and remove outliers.   
 ```{r, warning=FALSE, message=FALSE}
