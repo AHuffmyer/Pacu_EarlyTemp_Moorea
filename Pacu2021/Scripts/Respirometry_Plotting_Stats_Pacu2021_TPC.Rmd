@@ -74,6 +74,13 @@ PRdata <- PRdata %>%
 PRdata$group <- paste0(PRdata$Temperature,"_", PRdata$Treatment)
 ```
 
+Assign temperatures as the average of temperatures measured by the SDR plates.  
+
+
+
+
+
+
 View and remove outliers.   
 ```{r, warning=FALSE, message=FALSE}
 #PRdata <- PRdata %>% filter(R.nmol.org.min > -0.15) %>% filter(R.nmol.org.min < 0)

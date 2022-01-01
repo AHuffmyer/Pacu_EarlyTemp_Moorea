@@ -94,7 +94,7 @@ starttimes<-read.csv("Pacu2021/Data/Respiration/TPC/starttimes_TPC.csv") #read i
 rtime<-5#starttimes$Rtime #list respiration start times. For respiration measurements, filter as > than this time
 ```
 
-Run loop to extract slopes from respiration data. Subset for respiration data by filtering time >= respiration start time. Start and end time datasheet has removed first 3 minutes of each run to allow for temp equilibration.  
+Run loop to extract slopes from respiration data. Subset for respiration data by filtering time >= respiration start time. Remove first 5 minutes of each run.  
 
 ```{r, results=FALSE, warning=FALSE, message=FALSE}
 for(i in 1:length(file.names)) { # for every file in list start at the first and run this following function
