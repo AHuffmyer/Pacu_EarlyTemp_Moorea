@@ -154,13 +154,14 @@ ggsave("Pacu2021/Figures/Respiration/TPC/Respiration_Scatter.pdf", r_plot, dpi=3
 
 Filtering 
 ```{r}
-PRdata <- PRdata %>%
-    filter(!Temperature==8) %>%
-    filter(!Temperature==18)%>%
-    filter(!Temperature==34)%>%
-    filter(!Temperature==36)%>%
-    filter(!Temperature==38)%>%
-    filter(!Temperature==40)
+levels(as.factor(PRdata$Temperature))
+
+#PRdata <- PRdata %>%
+    #filter(!Temperature==11.81) %>%
+    #filter(!Temperature==17.56)%>%
+    #filter(!Temperature==34.29)%>%
+    #filter(!Temperature==35.29)
+
 
 r_plot<-PRdata %>%
     ggplot(., aes(x = Temperature, y = rate, colour=Treatment)) +
