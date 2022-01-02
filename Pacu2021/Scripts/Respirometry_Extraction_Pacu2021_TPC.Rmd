@@ -216,8 +216,8 @@ oxygen$R.umol.min <- oxygen$R.umol.L.min * oxygen$Volume #calculate
 blank_data <- subset(oxygen, Type == "Blank") #subset to blank data only
 par(mfrow=c(2,2))
 plot(as.factor(blank_data$Run),blank_data$R.umol.min, ylab="umol O2 min-1", xlab="RUN Number") #blanks during dark phase
-plot(blank_data$Plate, blank_data$R.umol.min, ylab="umol O2 min-1",, xlab="Plate Number") #blanks during dark phase
-plot(blank_data$Temperature, blank_data$R.umol.min, ylab="umol O2 min-1",xlab="Temperature Level") #blanks during dark phase
+plot(as.factor(blank_data$Plate), blank_data$R.umol.min, ylab="umol O2 min-1",, xlab="Plate Number") #blanks during dark phase
+plot(as.factor(blank_data$Temperature), blank_data$R.umol.min, ylab="umol O2 min-1",xlab="Temperature Level") #blanks during dark phase
 plot(as.factor(blank_data$Treatment), blank_data$R.umol.min, ylab="umol O2 min-1", xlab="Treatment") #blanks during dark phase
 
 #display mean blank value
