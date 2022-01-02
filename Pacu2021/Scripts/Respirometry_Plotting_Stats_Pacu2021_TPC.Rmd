@@ -53,7 +53,11 @@ library('ggpubr')
 
 Load data from LoLinR.    
 ```{r, warning=FALSE, message=FALSE}
+#With Categorical Temps
 PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates1.csv") #load data
+
+#With SDR calculated temps
+#PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates.csv") #load data
 ```
 
 Load temperatures calculated as the average of temperatures measured by the SDR plates. These are the temperatures that will be used for all analyses below.    
