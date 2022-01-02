@@ -53,18 +53,18 @@ library('ggpubr')
 
 Load data from LoLinR.    
 ```{r, warning=FALSE, message=FALSE}
-PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates.csv") #load data
+PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates1.csv") #load data
 ```
 
 Load temperatures calculated as the average of temperatures measured by the SDR plates. These are the temperatures that will be used for all analyses below.    
 
 ```{r}
 #load actual temps data generated from extraction script  
-actual_temps<-read.csv("Pacu2021/Output/Respiration/TPC/actual_temps.csv", header=TRUE, sep=",")
+#actual_temps<-read.csv("Pacu2021/Output/Respiration/TPC/actual_temps.csv", header=TRUE, sep=",")
 
 #format run column to match PRdata 
-actual_temps$Run<-gsub("Run","",as.character(actual_temps$Run))
-actual_temps$Run<-as.factor(actual_temps$Run)
+#actual_temps$Run<-gsub("Run","",as.character(actual_temps$Run))
+#actual_temps$Run<-as.factor(actual_temps$Run)
 ```
 
 Format data columns.  
@@ -80,10 +80,11 @@ PRdata$Plate<-as.factor(PRdata$Plate)
 PRdata$Run<-as.factor(PRdata$Run)
 
 #pull in temperature data for actual temperatures  
-PRdata$code<-paste(PRdata$Date, PRdata$Run)
-actual_temps$code<-paste(actual_temps$Date, actual_temps$Run)
+#PRdata$code<-paste(PRdata$Date, PRdata$Run)
+#actual_temps$code<-paste(actual_temps$Date, actual_temps$Run)
+#PRdata <- left_join(PRdata, actual_temps)
 
-PRdata$Temperature<-actual_temps$temp[match(PRdata$code, actual_temps$code)]
+#PRdata$Temperature<-actual_temps$temp[match(PRdata$code, actual_temps$code)]
 
 PRdata <- PRdata %>%
     group_by(Temperature,Treatment)%>%
@@ -160,11 +161,13 @@ Filtering
 ```{r}
 levels(as.factor(PRdata$Temperature))
 
-#PRdata <- PRdata %>%
-    #filter(!Temperature==11.81) %>%
-    #filter(!Temperature==17.56)%>%
-    #filter(!Temperature==34.29)%>%
-    #filter(!Temperature==35.29)
+PRdata <- PRdata %>%
+    filter(!Temperature==8) %>%
+    filter(!Temperature==18)%>%
+    filter(!Temperature==34)%>%
+    filter(!Temperature==36)%>%
+    filter(!Temperature==38)%>%
+    filter(!Temperature==40)
 
 
 r_plot<-PRdata %>%
@@ -212,12 +215,14 @@ PRdata <- PRdata %>%
   filter(rate < upper) %>%
   filter(rate > lower)
 
-<<<<<<< HEAD
-#PRdata <- PRdata %>% filter(rate > 0.0015)
-=======
->>>>>>> 2935501d0ff9c1aaecd004f8a449a38a9358f695
 PRdata <- PRdata %>% filter(rate < 0.14)
-PRdata <- PRdata[-c(96,106),]
+max(PRdata$rate)
+which(PRdata$rate ==max(PRdata$rate))
+PRdata <- PRdata %>% filter(rate < max(PRdata$rate))
+max(PRdata$rate)
+which(PRdata$rate ==max(PRdata$rate))
+PRdata <- PRdata %>% filter(rate < max(PRdata$rate))
+#PRdata <- PRdata[-c(100,107),]
 
 r_plot<-PRdata %>%
     ggplot(., aes(x = Temperature, y = rate, colour=Treatment)) +
@@ -455,7 +460,7 @@ TPC.plot <- ggplot(data=PRdata, aes(x=temp)) +
    geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), high.boot1_conf_preds, fill = 'red', alpha = 0.3) +
    geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), amb.boot1_conf_preds, fill = 'blue', alpha = 0.3) +
    xlim(21,33)+
-   scale_x_continuous(breaks=c(22,24,26,28,30,32))+
+   #scale_x_continuous(breaks=c(22,24,26,28,30,32))+
    theme_bw(base_size = 12) +
    scale_colour_manual(name="Treatment",values=cols)+
    theme(legend.position = c(0.15, 0.87),
@@ -466,12 +471,7 @@ TPC.plot <- ggplot(data=PRdata, aes(x=temp)) +
 
 TPC.plot 
 
-<<<<<<< HEAD
-
-ggsave("Pacu2021/Figures/Respiration/TPC/TPC.pdf", TPC.plot, dpi=300, w=8, h=8, units="in")
-=======
 ggsave("Pacu2021/Figures/Respiration/TPC/TPC_SharpSchool.pdf", TPC.plot, dpi=300, w=8, h=8, units="in")
->>>>>>> 2935501d0ff9c1aaecd004f8a449a38a9358f695
 
 ```
 
@@ -529,7 +529,6 @@ estimate.plots <- ggplot(All_params, aes(Treatment, estimate, color=Treatment)) 
 
 estimate.plots
 
-<<<<<<< HEAD
 All_params <- All_params %>% 
   filter(!param=="ctmin") %>%
   filter(!param=="ctmax") %>%
@@ -571,9 +570,6 @@ ggsave("Pacu2021/Figures/FigureX_TPC_estimates.pdf", figure, dpi=300, w=6, h=8, 
 ggsave("Pacu2021/Figures/FigureX_TPC_estimates.jpg", figure, dpi=300, w=6, h=8, units="in")
 
 
-
-``
-=======
 ggsave("Pacu2021/Figures/Respiration/TPC/TPC_estimates_SharpSchool.pdf", estimate.plots, dpi=300, w=8, h=8, units="in")
 ``` 
 
@@ -729,14 +725,12 @@ high.TCP.res
 
 ```{r}
  
-broom::tidy(amb.gaus.fit_nlsLM)
-broom::tidy(high.gaus.fit_nlsLM)
-
+broom::tidy(amb.fit_nlsLM)
+broom::tidy(high.fit_nlsLM)
 #AMBIENT
-amb.extra_params <- calc_params(amb.gaus.fit_nlsLM) %>%
+amb.extra_params <- calc_params(amb.fit_nlsLM) %>%
   pivot_longer(everything(), names_to =  'param', values_to = 'estimate')
-
-amb.ci_extra_params <- Boot(amb.gaus.fit_nlsLM, f = function(x){unlist(calc_params(x))}, labels = names(calc_params(amb.gaus.fit_nlsLM)), R = 200, method = 'case') %>%
+amb.ci_extra_params <- Boot(amb.fit_nlsLM, f = function(x){unlist(calc_params(x))}, labels = names(calc_params(amb.fit_nlsLM)), R = 200, method = 'case') %>%
   confint(., method = 'bca') %>%
   as.data.frame() %>%
   rename(conf_lower = 1, conf_upper = 2) %>%
@@ -746,13 +740,10 @@ amb.ci_extra_params <- Boot(amb.gaus.fit_nlsLM, f = function(x){unlist(calc_para
 amb.ci_extra_params <- left_join(amb.ci_extra_params, amb.extra_params)
 amb.ci_extra_params$Treatment <- "Ambient"
 # Joining, by = "param"
-
-
 #HIGH
-high.extra_params <- calc_params(high.gaus.fit_nlsLM) %>%
+high.extra_params <- calc_params(high.fit_nlsLM) %>%
   pivot_longer(everything(), names_to =  'param', values_to = 'estimate')
-
-high.ci_extra_params <- Boot(high.gaus.fit_nlsLM, f = function(x){unlist(calc_params(x))}, labels = names(calc_params(high.gaus.fit_nlsLM)), R = 200, method = 'case') %>%
+high.ci_extra_params <- Boot(high.fit_nlsLM, f = function(x){unlist(calc_params(x))}, labels = names(calc_params(high.fit_nlsLM)), R = 200, method = 'case') %>%
   confint(., method = 'bca') %>%
   as.data.frame() %>%
   rename(conf_lower = 1, conf_upper = 2) %>%
@@ -761,13 +752,10 @@ high.ci_extra_params <- Boot(high.gaus.fit_nlsLM, f = function(x){unlist(calc_pa
   
 high.ci_extra_params <- left_join(high.ci_extra_params, high.extra_params)
 high.ci_extra_params$Treatment <- "High"
-
 #Join Ambient and High estimates and CIs
-
 All_params <- rbind(amb.ci_extra_params, high.ci_extra_params)
 All_params <- All_params %>% 
  mutate_if(is.numeric, round, 2)
-
 #Plot
 estimate.plots <- ggplot(All_params, aes(Treatment, estimate, color=Treatment)) +
   geom_point(size = 2) +
@@ -776,9 +764,41 @@ estimate.plots <- ggplot(All_params, aes(Treatment, estimate, color=Treatment)) 
   theme_bw() +
   facet_wrap(~param, scales = 'free_y') +
   scale_x_discrete('')
-
 estimate.plots
-
-ggsave("Pacu2021/Figures/Respiration/TPC/TPC_estimates_Gaussian.pdf", estimate.plots, dpi=300, w=8, h=8, units="in")
+All_params <- All_params %>% 
+  filter(!param=="ctmin") %>%
+  filter(!param=="ctmax") %>%
+  filter(!param=="skewness") %>%
+  filter(!param=="thermal_safety_margin") %>%
+  filter(!param=="thermal_tolerance") %>%
+  filter(!param=="q10")%>%
+  filter(!param=="breadth")
+  
+estimate.plots <- ggplot(All_params, aes(Treatment, estimate, color=Treatment)) +
+  geom_point(size = 2) +
+  scale_color_manual(name="Treatment", values=c("blue","red"))+
+  geom_linerange(aes(ymin = conf_lower, ymax = conf_upper)) +
+  theme_bw() +
+  labs(y = NULL)+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        legend.position = "none",
+        strip.background = element_blank(), 
+        strip.placement = "outside") +
+  facet_wrap(~param, scales = 'free_y', nrow=1, 
+             labeller = as_labeller(c(e = "e (Energy)", eh = " eh (Energy)", rmax= "Rmax (~nmol~O[2] ~larva^{-1}~min^{-1})",topt="Topt (Temperature °C)")), strip.position = "left") +
+  scale_x_discrete('')
+estimate.plots
+ggsave("Pacu2021/Figures/Respiration/TPC/TPC_estimates.pdf", estimate.plots, dpi=300, w=6, h=2, units="in")
 ``` 
->>>>>>> 2935501d0ff9c1aaecd004f8a449a38a9358f695
+
+
+```{r}
+figure <- ggarrange(TPC.plot , estimate.plots,
+                    labels = c("A", "B"),
+                    ncol = 1, nrow = 2,
+                    heights=c(1,0.5))
+figure
+ggsave("Pacu2021/Figures/FigureX_TPC_estimates.pdf", figure, dpi=300, w=6, h=8, units="in")
+ggsave("Pacu2021/Figures/FigureX_TPC_estimates.jpg", figure, dpi=300, w=6, h=8, units="in")
+```
