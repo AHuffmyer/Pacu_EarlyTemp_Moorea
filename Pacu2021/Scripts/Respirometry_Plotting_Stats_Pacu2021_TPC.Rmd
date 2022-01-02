@@ -30,7 +30,10 @@ if ("scales" %in% rownames(installed.packages()) == 'FALSE') install.packages('s
 if ("ggplot2" %in% rownames(installed.packages()) == 'FALSE') install.packages('ggplot2') 
 if ("nls.multstart" %in% rownames(installed.packages()) == 'FALSE') install.packages('nls.multstart') 
 if ("broom" %in% rownames(installed.packages()) == 'FALSE') install.packages('broom') 
+if ("ggpubr" %in% rownames(installed.packages()) == 'FALSE') install.packages('ggpubr') 
+if ("ggstatsplot" %in% rownames(installed.packages()) == 'FALSE') install.packages('ggstatsplot') 
 if ("rTPC" %in% rownames(installed.packages()) == 'FALSE') remotes::install_github("padpadpadpad/rTPC")
+
 
 #load packages
 library("ggplot2")
@@ -41,6 +44,7 @@ library('nls.multstart')
 library('broom')
 library('rTPC')
 library('ggstatsplot')
+library('ggpubr')
 ```
 
 
@@ -170,9 +174,6 @@ View and remove outliers.
 ```{r, warning=FALSE, message=FALSE}
 
 #identify outliers by Tremperature and Treatment groups
-outlier.plot <- ggbetweenstats(PRdata,group, rate, outlier.tagging = TRUE)
-outlier.plot
-
 Quants <- PRdata %>%
   group_by(Treatment, Temperature) %>%
   summarize(quant25 = quantile(rate, probs = q[1]),
@@ -192,12 +193,26 @@ PRdata <- PRdata %>%
   filter(rate < upper) %>%
   filter(rate > lower)
 
-PRdata <- PRdata %>% filter(rate < 0.095)
+#PRdata <- PRdata %>% filter(rate > 0.0015)
+PRdata <- PRdata %>% filter(rate < 0.14)
+PRdata <- PRdata[-c(96,106),]
 
-outlier.removed.plot <- ggbetweenstats(PRdata, group, rate, outlier.tagging = TRUE)
-outlier.removed.plot
-
-ggsave("Pacu2021/Figures/Respiration/TPC/Removed_outliersbygroup2.pdf", outlier.removed.plot, dpi=300, w=16, h=8, units="in")
+r_plot<-PRdata %>%
+    ggplot(., aes(x = Temperature, y = rate, colour=Treatment)) +
+    geom_point(aes(fill=Treatment, group=interaction(Temperature, Treatment)), pch = 21, size=2, alpha=0.5, position = position_jitterdodge(0.3)) + 
+   #geom_smooth(method = "lm", se=FALSE, formula=y ~ poly(x, 3, raw=TRUE), size=3)+
+    xlab("Temperature") + 
+    scale_fill_manual(name="Treatment", values=c("blue","red"))+
+    scale_color_manual(name="Treatment", values=c("blue","red"))+
+    ylab(expression(bold(paste("R (nmol ", O[2], " larva"^-1, "min"^-1, ")")))) +
+    theme_classic() + 
+    theme(
+      legend.position="none",
+      axis.title=element_text(face="bold", size=16),
+      axis.text=element_text(size=12, color="black"), 
+      legend.title=element_text(face="bold", size=14), 
+      legend.text=element_text(size=12)
+      ); r_plot
 
 ```
 
@@ -405,19 +420,28 @@ high.CI.plot
 
 ```{r}
  
+cols <- c("ambient"="blue", "high"="red")
+  
 # plot data and model fit
-TPC.plot <- ggplot() +
-   geom_point(aes(temp, rate), d.amb, size = 2, alpha = 0.5,col = 'blue') +
-   geom_point(aes(temp, rate), d.high, size = 2, alpha = 0.5,col = 'red') +
+TPC.plot <- ggplot(data=PRdata, aes(x=temp)) +
+   geom_point(aes(temp, rate, color="ambient"), d.amb, size = 2, alpha = 0.5) +
+   geom_point(aes(temp, rate, color="high"), d.high, size = 2, alpha = 0.5) +
    geom_line(aes(temp, .fitted), amb.preds, col = 'blue', size=2) +
    geom_line(aes(temp, .fitted), high.preds, col = 'red', size=2) +
    geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), high.boot1_conf_preds, fill = 'red', alpha = 0.3) +
    geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), amb.boot1_conf_preds, fill = 'blue', alpha = 0.3) +
+   xlim(21,33)+
+   scale_x_continuous(breaks=c(22,24,26,28,30,32))+
    theme_bw(base_size = 12) +
+   scale_colour_manual(name="Treatment",values=cols)+
+   theme(legend.position = c(0.15, 0.87),
+         panel.border = element_blank(), panel.grid.major = element_blank(),
+         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))+
    labs(x = 'Temperature (ºC)',
-        y = 'Metabolic rate')
+        y = expression("Respiration Rate"~nmol~O[2] ~larva^{-1}~min^{-1}))
 
 TPC.plot 
+
 
 ggsave("Pacu2021/Figures/Respiration/TPC/TPC.pdf", TPC.plot, dpi=300, w=8, h=8, units="in")
 
@@ -462,7 +486,8 @@ high.ci_extra_params$Treatment <- "High"
 #Join Ambient and High estimates and CIs
 
 All_params <- rbind(amb.ci_extra_params, high.ci_extra_params)
-All_params
+All_params <- All_params %>% 
+ mutate_if(is.numeric, round, 2)
 
 #Plot
 estimate.plots <- ggplot(All_params, aes(Treatment, estimate, color=Treatment)) +
@@ -475,5 +500,46 @@ estimate.plots <- ggplot(All_params, aes(Treatment, estimate, color=Treatment)) 
 
 estimate.plots
 
-ggsave("Pacu2021/Figures/Respiration/TPC/TPC_estimates.pdf", estimate.plots, dpi=300, w=8, h=8, units="in")
+All_params <- All_params %>% 
+  filter(!param=="ctmin") %>%
+  filter(!param=="ctmax") %>%
+  filter(!param=="skewness") %>%
+  filter(!param=="thermal_safety_margin") %>%
+  filter(!param=="thermal_tolerance") %>%
+  filter(!param=="q10")%>%
+  filter(!param=="breadth")
+  
+estimate.plots <- ggplot(All_params, aes(Treatment, estimate, color=Treatment)) +
+  geom_point(size = 2) +
+  scale_color_manual(name="Treatment", values=c("blue","red"))+
+  geom_linerange(aes(ymin = conf_lower, ymax = conf_upper)) +
+  theme_bw() +
+  labs(y = NULL)+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        legend.position = "none",
+        strip.background = element_blank(), 
+        strip.placement = "outside") +
+  facet_wrap(~param, scales = 'free_y', nrow=1, 
+             labeller = as_labeller(c(e = "e (Energy)", eh = " eh (Energy)", rmax= "Rmax (~nmol~O[2] ~larva^{-1}~min^{-1})",topt="Topt (Temperature °C)")), strip.position = "left") +
+  scale_x_discrete('')
+
+estimate.plots
+
+ggsave("Pacu2021/Figures/Respiration/TPC/TPC_estimates.pdf", estimate.plots, dpi=300, w=6, h=2, units="in")
 ``` 
+
+
+```{r}
+figure <- ggarrange(TPC.plot , estimate.plots,
+                    labels = c("A", "B"),
+                    ncol = 1, nrow = 2,
+                    heights=c(1,0.5))
+figure
+
+ggsave("Pacu2021/Figures/FigureX_TPC_estimates.pdf", figure, dpi=300, w=6, h=8, units="in")
+ggsave("Pacu2021/Figures/FigureX_TPC_estimates.jpg", figure, dpi=300, w=6, h=8, units="in")
+
+
+
+``
