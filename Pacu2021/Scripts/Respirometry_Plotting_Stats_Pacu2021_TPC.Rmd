@@ -54,10 +54,10 @@ library('ggpubr')
 Load data from LoLinR.    
 ```{r, warning=FALSE, message=FALSE}
 #With Categorical Temps
-PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates1.csv") #load data
+#PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates1.csv") #load data
 
 #With SDR calculated temps
-#PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates.csv") #load data
+PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates.csv") #load data
 ```
 
 Load temperatures calculated as the average of temperatures measured by the SDR plates. These are the temperatures that will be used for all analyses below.    
@@ -165,13 +165,19 @@ Filtering
 ```{r}
 levels(as.factor(PRdata$Temperature))
 
-PRdata <- PRdata %>%
-    filter(!Temperature==8) %>%
-    filter(!Temperature==18)%>%
-    filter(!Temperature==34)%>%
-    filter(!Temperature==36)%>%
-    filter(!Temperature==38)%>%
-    filter(!Temperature==40)
+#For Filtering Temp Cat
+# PRdata <- PRdata %>%
+#     filter(!Temperature==8) %>%
+#     filter(!Temperature==18)%>%
+#     filter(!Temperature==34)%>%
+#     filter(!Temperature==36)%>%
+#     filter(!Temperature==38)%>%
+#     filter(!Temperature==40)
+
+#For Filtering SDR Temps
+ PRdata <- PRdata %>%
+    filter(!Temperature<20) %>%
+     filter(!Temperature>32.5)
 
 
 r_plot<-PRdata %>%
