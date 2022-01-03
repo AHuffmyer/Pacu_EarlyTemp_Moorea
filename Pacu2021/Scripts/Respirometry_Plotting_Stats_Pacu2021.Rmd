@@ -91,15 +91,20 @@ PRdata<-PRdata%>%filter(R.nmol.org.min < 0)
 
 ## Respiration  
 
-Plot data as a box plot.  
+Plot data as a box plot with means overlayed.  
 ```{r}
-r_plot<-PRdata %>%
+r_means<-PRdata %>%
     group_by(Temperature)%>%
-    #filter(R.nmol.org.min<0)%>%
-    ggplot(., aes(x = as.factor(Temperature), y = R.nmol.org.min, group=Temperature)) +
+    summarise(mean=mean(R.nmol.org.min), sd=sd(R.nmol.org.min), N=length(R.nmol.org.min), se=sd/sqrt(N))
+  
+r_plot<- ggplot(NULL, aes(group=Temperature)) +
     geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
-    geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
-    geom_point(aes(fill=Temperature, group=Temperature), pch = 21, size=4, alpha=0.5, position = position_jitterdodge(0.3)) + 
+    geom_boxplot(data=PRdata, aes(fill=Temperature, group=Temperature, y = R.nmol.org.min, x = as.factor(Temperature)), alpha=0.4)+
+    geom_point(data=PRdata, aes(fill=Temperature, group=Temperature, y = R.nmol.org.min, x = as.factor(Temperature)), pch = 21, size=4, alpha=0.4, position = position_jitterdodge(0.3)) + 
+   
+    geom_point(data=r_means, aes(y=mean, group=Temperature, x = as.factor(Temperature)), fill="black", pch = 21, size=5, alpha=1, position = position_dodge(0.3)) + 
+    geom_errorbar(data=r_means, aes(ymin=mean-se, ymax=mean+se, group=Temperature, x = as.factor(Temperature)), width=0, linetype="solid", position=position_dodge(0.3), size=2, color="black")+
+  
     xlab("Temperature") + 
     scale_fill_manual(name="Temperature", values=c("blue","orange", "red"))+
     scale_color_manual(name="Temperature", values=c("blue","orange", "red"))+
@@ -120,7 +125,6 @@ PRdata$Date<-as.factor(PRdata$Date)
 
 r_plot1<-PRdata %>%
     group_by(Temperature, as.factor(Date))%>%
-      #filter(R.nmol.org.min<0)%>%
     ggplot(., aes(x = as.factor(Temperature), y = R.nmol.org.min, group=Temperature)) +
     facet_wrap(~Date)+
     geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
@@ -170,14 +174,20 @@ r_plot_b<-PRdata %>%
 
 For photosynthesis filter out runs 7 and 8, these runs were outliers that didn't work due to equipment issues.    
  
-Plot data as a box plot.    
+Plot data as a box plot with means overlayed.    
 ```{r}
-p_plot<-PRdata %>%
+p_means<-PRdata %>%
     group_by(Temperature)%>%
-    ggplot(., aes(x = as.factor(Temperature), y = P.nmol.org.min, group=Temperature)) +
+    summarise(mean=mean(P.nmol.org.min), sd=sd(P.nmol.org.min), N=length(P.nmol.org.min), se=sd/sqrt(N))
+  
+p_plot<- ggplot(NULL, aes(group=Temperature)) +
     geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
-    geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
-    geom_point(aes(fill=Temperature, group=Temperature), pch = 21, size=4, alpha=0.5, position = position_jitterdodge(0.3)) + 
+    geom_boxplot(data=PRdata, aes(fill=Temperature, group=Temperature, y = P.nmol.org.min, x = as.factor(Temperature)), alpha=0.4)+
+    geom_point(data=PRdata, aes(fill=Temperature, group=Temperature, y = P.nmol.org.min, x = as.factor(Temperature)), pch = 21, size=4, alpha=0.4, position = position_jitterdodge(0.3)) + 
+   
+    geom_point(data=p_means, aes(y=mean, group=Temperature, x = as.factor(Temperature)), fill="black", pch = 21, size=5, alpha=1, position = position_dodge(0.3)) + 
+    geom_errorbar(data=p_means, aes(ymin=mean-se, ymax=mean+se, group=Temperature, x = as.factor(Temperature)), width=0, linetype="solid", position=position_dodge(0.3), size=2, color="black")+
+  
     xlab("Temperature") + 
     scale_fill_manual(name="Temperature", values=c("blue","orange", "red"))+
     scale_color_manual(name="Temperature", values=c("blue","orange", "red"))+
@@ -190,7 +200,7 @@ p_plot<-PRdata %>%
       axis.text=element_text(size=12, color="black"), 
       legend.title=element_text(face="bold", size=14), 
       legend.text=element_text(size=12)
-      ); p_plot
+      ); p_plot 
 ```
 
 ```{r}
@@ -243,14 +253,20 @@ p_plot_b<-PRdata %>%
 
 ## Photosynthesis (Gross)  
 
-Plot data as a box plot.    
+Plot data as a box plot with means overlayed.    
 ```{r}
-gp_plot<-PRdata %>%
+gp_means<-PRdata %>%
     group_by(Temperature)%>%
-    ggplot(., aes(x = as.factor(Temperature), y = GP.nmol.org.min, group=Temperature)) +
+    summarise(mean=mean(GP.nmol.org.min), sd=sd(GP.nmol.org.min), N=length(GP.nmol.org.min), se=sd/sqrt(N))
+  
+gp_plot<- ggplot(NULL, aes(group=Temperature)) +
     geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
-    geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
-    geom_point(aes(fill=Temperature, group=Temperature), pch = 21, size=4, alpha=0.5, position = position_jitterdodge(0.3)) + 
+    geom_boxplot(data=PRdata, aes(fill=Temperature, group=Temperature, y = GP.nmol.org.min, x = as.factor(Temperature)), alpha=0.4)+
+    geom_point(data=PRdata, aes(fill=Temperature, group=Temperature, y = GP.nmol.org.min, x = as.factor(Temperature)), pch = 21, size=4, alpha=0.4, position = position_jitterdodge(0.3)) + 
+   
+    geom_point(data=gp_means, aes(y=mean, group=Temperature, x = as.factor(Temperature)), fill="black", pch = 21, size=5, alpha=1, position = position_dodge(0.3)) + 
+    geom_errorbar(data=gp_means, aes(ymin=mean-se, ymax=mean+se, group=Temperature, x = as.factor(Temperature)), width=0, linetype="solid", position=position_dodge(0.3), size=2, color="black")+
+  
     xlab("Temperature") + 
     scale_fill_manual(name="Temperature", values=c("blue","orange", "red"))+
     scale_color_manual(name="Temperature", values=c("blue","orange", "red"))+
@@ -263,7 +279,7 @@ gp_plot<-PRdata %>%
       axis.text=element_text(size=12, color="black"), 
       legend.title=element_text(face="bold", size=14), 
       legend.text=element_text(size=12)
-      ); gp_plot
+      ); gp_plot 
 ```
 
 ```{r}
@@ -315,15 +331,20 @@ gp_plot_b<-PRdata %>%
 
 ## P:R Ratio  
 
-Plot data as a box plot.     
+Plot data as a box plot with means overlayed.     
 ```{r}
-pr_plot<-PRdata %>%
+pr_means<-PRdata %>%
     group_by(Temperature)%>%
-    #filter(R.nmol.org.min<0)%>%
-    ggplot(., aes(x = as.factor(Temperature), y = ratio, group=Temperature)) +
-    geom_hline(yintercept=1, linetype="dashed", color="black", size=0.75)+
-    geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
-    geom_point(aes(fill=Temperature, group=Temperature), pch = 21, size=4, alpha=0.5, position = position_jitterdodge(0.3)) + 
+    summarise(mean=mean(ratio), sd=sd(ratio), N=length(ratio), se=sd/sqrt(N))
+  
+pr_plot<- ggplot(NULL, aes(group=Temperature)) +
+    geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
+    geom_boxplot(data=PRdata, aes(fill=Temperature, group=Temperature, y = ratio, x = as.factor(Temperature)), alpha=0.4)+
+    geom_point(data=PRdata, aes(fill=Temperature, group=Temperature, y = ratio, x = as.factor(Temperature)), pch = 21, size=4, alpha=0.4, position = position_jitterdodge(0.3)) + 
+   
+    geom_point(data=pr_means, aes(y=mean, group=Temperature, x = as.factor(Temperature)), fill="black", pch = 21, size=5, alpha=1, position = position_dodge(0.3)) + 
+    geom_errorbar(data=pr_means, aes(ymin=mean-se, ymax=mean+se, group=Temperature, x = as.factor(Temperature)), width=0, linetype="solid", position=position_dodge(0.3), size=2, color="black")+
+  
     xlab("Temperature") + 
     scale_fill_manual(name="Temperature", values=c("blue","orange", "red"))+
     scale_color_manual(name="Temperature", values=c("blue","orange", "red"))+
@@ -331,36 +352,12 @@ pr_plot<-PRdata %>%
     scale_y_continuous(limits=c(0, 4), labels = scales::number_format(accuracy = 0.1, decimal.mark = '.'))+
     theme_classic() + 
     theme(
-      legend.position="right",
+      legend.position="none",
       axis.title=element_text(face="bold", size=16),
       axis.text=element_text(size=12, color="black"), 
       legend.title=element_text(face="bold", size=14), 
       legend.text=element_text(size=12)
-      ); pr_plot
-```
-
-```{r}
-pr_plot1<-PRdata %>%
-    group_by(Temperature)%>%
-    #filter(R.nmol.org.min<0)%>%
-    ggplot(., aes(x = as.factor(Temperature), y = ratio, group=Temperature)) +
-    facet_wrap(~Date)+
-    geom_hline(yintercept=1, linetype="dashed", color="black", size=0.75)+
-    geom_boxplot(aes(fill=Temperature, group=Temperature), alpha=0.5)+
-    geom_point(aes(fill=Temperature, group=Temperature), pch = 21, size=4, alpha=0.5, position = position_jitterdodge(0.3)) + 
-    xlab("Temperature") + 
-    scale_fill_manual(name="Temperature", values=c("blue","orange", "red"))+
-    scale_color_manual(name="Temperature", values=c("blue","orange", "red"))+
-    ylab(expression(bold(paste("P:R")))) +
-    scale_y_continuous(limits=c(0, 4), labels = scales::number_format(accuracy = 0.1, decimal.mark = '.'))+
-    theme_classic() + 
-    theme(
-      legend.position="right",
-      axis.title=element_text(face="bold", size=16),
-      axis.text=element_text(size=12, color="black"), 
-      legend.title=element_text(face="bold", size=14), 
-      legend.text=element_text(size=12)
-      ); pr_plot1
+      ); pr_plot 
 ```
 
 Plot data as a mean dot plot.     
