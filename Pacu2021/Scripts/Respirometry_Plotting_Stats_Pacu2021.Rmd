@@ -331,14 +331,14 @@ gp_plot_b<-PRdata %>%
 
 ## P:R Ratio  
 
-Plot data as a box plot with means overlayed.     
+Plot data as a box plot with means overlayed.      
 ```{r}
 pr_means<-PRdata %>%
     group_by(Temperature)%>%
     summarise(mean=mean(ratio), sd=sd(ratio), N=length(ratio), se=sd/sqrt(N))
   
 pr_plot<- ggplot(NULL, aes(group=Temperature)) +
-    geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
+    geom_hline(yintercept=1, linetype="dashed", color="black", size=0.75)+
     geom_boxplot(data=PRdata, aes(fill=Temperature, group=Temperature, y = ratio, x = as.factor(Temperature)), alpha=0.4)+
     geom_point(data=PRdata, aes(fill=Temperature, group=Temperature, y = ratio, x = as.factor(Temperature)), pch = 21, size=4, alpha=0.4, position = position_jitterdodge(0.3)) + 
    
