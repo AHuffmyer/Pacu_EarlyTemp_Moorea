@@ -1,0 +1,138 @@
+---
+title: "Temperatures"
+author: "HM Putnam"
+date: "1/2/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+Loading packages
+```{r}
+
+library('tidyverse')
+library('lubridate')
+library('ggplot2')
+library('ggpubr')
+
+```
+
+## Fringing Reef Temperature Data MCR Fringe Site 1
+```{r}
+MCR.Frng1 <- read.csv("Pacu2021/Data/MCR_LTER01_BottomMountThermistors_20200306.csv")
+unique(MCR.Frng1$reef_type_code)
+MCR.Frng1  <- subset(MCR.Frng1 , reef_type_code=="FRI")
+colnames(MCR.Frng1)[2] <- "Date.Time"
+MCR.Frng1$Date.Time <- as.POSIXct(MCR.Frng1$Date.Time, format="%Y-%m-%d %T", tz="Pacific/Tahiti")
+
+startday <- as.POSIXct("2008-11-15 00:00:00")
+endday <- as.POSIXct("2008-12-15 00:00:00")
+MCR.Frng1.Dec2008 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2008$year <- 2008
+
+startday <- as.POSIXct("2009-11-15 00:00:00")
+endday <- as.POSIXct("2009-12-15 00:00:00")
+MCR.Frng1.Dec2009 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2009$year <- 2009
+
+startday <- as.POSIXct("2010-11-15 00:00:00")
+endday <- as.POSIXct("2010-12-15 00:00:00")
+MCR.Frng1.Dec2010 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2010$year <- 2010
+
+startday <- as.POSIXct("2011-11-15 00:00:00")
+endday <- as.POSIXct("2011-12-15 00:00:00")
+MCR.Frng1.Dec2011 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2011$year <- 2011
+
+startday <- as.POSIXct("2012-11-15 00:00:00")
+endday <- as.POSIXct("2012-12-15 00:00:00")
+MCR.Frng1.Dec2012 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2012$year <- 2012
+
+startday <- as.POSIXct("2013-11-15 00:00:00")
+endday <- as.POSIXct("2013-12-15 00:00:00")
+MCR.Frng1.Dec2013 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2013$year <- 2013
+
+startday <- as.POSIXct("2014-11-15 00:00:00")
+endday <- as.POSIXct("2014-12-15 00:00:00")
+MCR.Frng1.Dec2014 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2014$year <- 2014
+
+startday <- as.POSIXct("2015-11-15 00:00:00")
+endday <- as.POSIXct("2015-12-15 00:00:00")
+MCR.Frng1.Dec2015 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2015$year <- 2015
+
+startday <- as.POSIXct("2016-11-15 00:00:00")
+endday <- as.POSIXct("2016-12-15 00:00:00")
+MCR.Frng1.Dec2016 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2016$year <- 2016
+
+startday <- as.POSIXct("2017-11-15 00:00:00")
+endday <- as.POSIXct("2017-12-15 00:00:00")
+MCR.Frng1.Dec2017 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2017$year <- 2017
+
+startday <- as.POSIXct("2018-11-15 00:00:00")
+endday <- as.POSIXct("2018-12-15 00:00:00")
+MCR.Frng1.Dec2018 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2018$year <- 2018
+
+startday <- as.POSIXct("2019-11-15 00:00:00")
+endday <- as.POSIXct("2019-12-15 00:00:00")
+MCR.Frng1.Dec2019 <- subset(MCR.Frng1, MCR.Frng1$Date.Time > startday & MCR.Frng1$Date.Time < endday)
+MCR.Frng1.Dec2019$year <- 2019
+
+ 
+Decs <- rbind(MCR.Frng1.Dec2008,MCR.Frng1.Dec2009,MCR.Frng1.Dec2010,
+              MCR.Frng1.Dec2011,MCR.Frng1.Dec2012,MCR.Frng1.Dec2013,MCR.Frng1.Dec2014,
+              MCR.Frng1.Dec2015,MCR.Frng1.Dec2016,MCR.Frng1.Dec2017,MCR.Frng1.Dec2018,
+              MCR.Frng1.Dec2019)
+Decs$days<-format(Decs$Date.Time, format="%m-%d")
+
+Dec <- ggplot(Decs, aes(days, temperature_c)) +
+  geom_point(na.rm=TRUE, color="black", size=0.5) +
+  facet_wrap(~year)+
+  theme_bw()+
+  geom_hline(yintercept = 30, color="red")+
+  theme(axis.text.x=element_text(angle=90, size=4))+
+  xlab("Date") + ylab("Temperature (°C)")
+
+ggsave("Pacu2021/Figures/DecemberTemps.pdf")
+ggsave("Pacu2021/Figures/DecemberTemps.jpg")
+
+All <- ggplot(MCR.Frng1, aes(Date.Time, temperature_c)) +
+  geom_point(na.rm=TRUE, color="black", size=0.5) +
+  theme_bw()+
+  geom_hline(yintercept = 30, color="red")+
+  theme(axis.text.x=element_text(angle=90, size=4))+
+  xlab("Date") + ylab("Temperature (°C)")
+
+ggsave("Pacu2021/Figures/AllTemps.pdf")
+ggsave("Pacu2021/Figures/AllTemps.jpg")
+
+
+figure <- ggarrange(All, Dec,
+                    labels = c("A", "B"),
+                    ncol = 1, nrow = 2,
+                    heights=c(1,2))
+figure
+
+ggsave("Pacu2021/Figures/Figure2_Temps.pdf", figure, dpi=300, w=6, h=8, units="in")
+ggsave("Pacu2021/Figures/Figure2_Temps.jpg", figure, dpi=300, w=6, h=8, units="in")
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
