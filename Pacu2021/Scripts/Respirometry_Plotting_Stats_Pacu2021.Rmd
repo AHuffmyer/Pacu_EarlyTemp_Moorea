@@ -352,7 +352,7 @@ pr_plot<- ggplot(NULL, aes(group=Temperature)) +
     scale_y_continuous(limits=c(0, 4), labels = scales::number_format(accuracy = 0.1, decimal.mark = '.'))+
     theme_classic() + 
     theme(
-      legend.position="none",
+      legend.position="right",
       axis.title=element_text(face="bold", size=16),
       axis.text=element_text(size=12, color="black"), 
       legend.title=element_text(face="bold", size=14), 
