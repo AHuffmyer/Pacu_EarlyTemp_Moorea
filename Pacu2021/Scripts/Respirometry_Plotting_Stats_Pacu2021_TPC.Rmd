@@ -52,7 +52,7 @@ library('ggpubr')
 Load data from LoLinR.    
 ```{r, warning=FALSE, message=FALSE}
 #With Categorical Temps
-PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates1.csv") #load data
+PRdata<-read.csv("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates.csv") #load data
 ```
 
 Format data columns.  

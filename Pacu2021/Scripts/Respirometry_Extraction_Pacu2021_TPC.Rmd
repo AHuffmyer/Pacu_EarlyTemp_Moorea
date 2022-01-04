@@ -73,10 +73,10 @@ Generate respiration data frames.
 ```{r, warning=FALSE, message=FALSE}
 #generate a 6 column dataframe with specific column names
 #respiration
-Resp.R <- data.frame(matrix(NA, ncol=7))
+Resp.R <- data.frame(matrix(NA, ncol=6))
 colnames(Resp.R) <- c("Date", "Run","Sample.ID","Chamber.ID","Intercept", "umol.L.min")
 
-Resp.Rb <- data.frame(matrix(NA, ncol=7))
+Resp.Rb <- data.frame(matrix(NA, ncol=6))
 colnames(Resp.Rb) <- c("Date", "Run","Sample.ID","Chamber.ID","Intercept", "umol.L.min")
 ```
 
@@ -120,13 +120,15 @@ for(i in 1:length(file.names)) { # for every file in list start at the first and
 }
 
 #export file for use later on 
-Temp.R <- Temp.R[-1,] #remove empty column
+Temp.R <- Temp.R[-1,] #remove empty row
 
 write.csv(Temp.R, paste0("Pacu2021/Output/Respiration/TPC/SDR_temps.csv", sep="")) 
 ```
 
 
 Run loop to extract slopes from respiration data. Subset for respiration data by filtering time >= respiration start time. Remove first rstart (e.g., 5) minutes of each run.  
+
+Removed well B6 manually due to missing sensor. This column had to be removed manually from data sheets due to 'no sensor' reading that stops the code.
 
 ```{r, results=FALSE, warning=FALSE, message=FALSE}
 for(i in 1:length(file.names)) { # for every file in list start at the first and run this following function
@@ -161,13 +163,13 @@ for(i in 1:length(file.names)) { # for every file in list start at the first and
 
 ```
 
-Removed well B6 manually due to missing sensor. This column had to be removed manually from data sheets due to 'no sensor' reading that stops the code.   
 Save respiration data frames.  
-
 ```{r, results=FALSE, warning=FALSE, message=FALSE}
-Resp.R <- Resp.R[-1,] #remove empty row
-
-write.csv(Resp.R, paste0("Pacu2021/Output/Respiration/TPC/Respiration_rates_Pacu2021.csv", sep="")) #save respiration rate data
+Resp.R.out <- Resp.R[-1,] #remove empty row
+Resp.R.out$group <- paste0(Resp.R.out$Run,"_", Resp.R.out$Sample.ID)
+Sample.Info$group <- paste0(Sample.Info$Run,"_", Sample.Info$Sample.ID)
+Resp.R.out <- left_join(Resp.R.out,Sample.Info%>% dplyr::select(Treatment,TemperatureCat, Type,Volume,Org.Number,group), by="group")
+write.csv(Resp.R.out, paste0("Pacu2021/Output/Respiration/TPC/Respiration_rates_Pacu2021.csv", sep="")) #save respiration rate data
 ```
 
 
@@ -177,25 +179,24 @@ Resp.Rates <- read.csv(file = "Pacu2021/Output/Respiration/TPC/Respiration_rates
 Resp.Rates = subset(Resp.Rates, select = -c(X) ) #remove empty column
 
 #format "run" column
-Resp.Rates<-Resp.Rates %>%
-  mutate(Run = str_sub(Run, 4, -1))
-Resp.Rates$Run<-as.factor(Resp.Rates$Run) #format as # rather than run #, set as integer
+#Resp.Rates<-Resp.Rates %>%
+  #mutate(Run = str_sub(Run, 4, -1))
+#Resp.Rates$Run<-as.factor(Resp.Rates$Run) #format as # rather than run #, set as integer
 ```
 
 Merge R files with sample info for testing and manipulation.  
 
 ```{r, warning=FALSE, message=FALSE}
-Sample.Info$Run<-as.factor(Resp.Rates$Run)
+
 Temp.Inc<-read.csv("Pacu2021/Data/Respiration/TPC/Incubator_Temps.csv") #temperature measured in the incubator during the runs
 
 #calculate the mean temperature during each run
 Temp.Inc <- Temp.Inc %>%
-  group_by(TemperatureCat) %>%
+  group_by(TemperatureCat, Run) %>%
   summarise(Temperature=mean(Measured.Temp))
 
-#join the sample info with the mean temperatures measured in the incubator for each run
-Sample.Info <- left_join(Sample.Info, Temp.Inc)
-oxygen<-full_join(Sample.Info, Resp.Rates) #add respiration data
+#join the rates with the mean temperatures measured in the incubator for each run
+oxygen<-full_join(Resp.Rates, Temp.Inc) #add respiration data
 colnames(oxygen)[colnames(oxygen) == 'Intercept'] <- 'Resp.Intercept' #rename to specify R
 colnames(oxygen)[colnames(oxygen) == 'umol.L.min'] <- 'R.umol.L.min' #rename to specify R
 ```
@@ -209,57 +210,66 @@ Remove wells that slope extraction has issues (e.g., multiple peaks, wells with 
 oxygen$code<-paste(oxygen$Run, oxygen$Chamber.ID)
 
 #revised on 20220104 by AH
-remove<-c("2 A1", "2 C1", "3 A4", "4 A3", "4 B5", "4 C5", "4 D1", "7 A3","7 B2", "7 C2", "7 C4", "8 B3", "8 B5", "8 C3", "8 D1", "8 D4", "B A2", "C A1", "C A2", "C C3")
+remove<-c("Run2 A1", "Run2 C1", "Run4 B5", "Run4 C5", "Run4 D1", "Run7 B2", "Run7 C2", "Run7 C4", "Run8 B3", "Run8 B5", "Run8 C3", "Run8 D1", "Run8 D4", "RunB A2", "RunC A2")
 
 #remove confirmed wells with issues
 oxygen<-oxygen%>%
    filter(!code %in% remove)
 
 # testing removal of remaining questionable rate extraction plots
-#remove<-c("2 A1", "2 C1", "3 A4", "4 A3", "4 B5", "4 C5", "4 D1", "7 A3","7 B2", "7 C2", "7 C4", "8 B3", "8 B5", "8 C3", "8 D1", "8 D4", "B A2", "C A1", "C A2", "C C3")
+#remove<-c("2 A1", "2 C1", "3 A4", "4 A3", "4 B5", "4 C5", "4 D1", "7 A3","7 B2", "7 C2", "7 C4", "8 B3", "8 B5", "8 C3", "8 D1", "8 D4", "B A2", "C A2", "C C3")
 
 # testing 
 #oxygen<-oxygen%>% filter(!code %in% remove)
 ```
 
 
-Account for volume and substract blank values.    
+Account for volume and subtract blank values.    
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
 #Account for chamber volume to convert from umol L-1 m-1 to umol m-1. This standardizes across water volumes (different because of coral size) and removes per Liter
 oxygen$R.umol.min <- oxygen$R.umol.L.min * oxygen$Volume #calculate
 
 blank_data <- subset(oxygen, Type == "Blank") #subset to blank data only
+blank_data <- blank_data %>% rename(R.blank.umol.min=R.umol.min)
 
 #display mean blank value
-meanblank <- mean(blank_data$R.umol.min) #mean R phase blanks
+meanblank <- mean(blank_data$R.blank.umol.min) #mean R phase blanks
 
-par(mfrow=c(2,2))
-plot(as.factor(blank_data$Run),blank_data$R.umol.min, ylab="umol O2 min-1", xlab="RUN Number")
-abline(h=-meanblank)
-#blanks during dark phase
-plot(as.factor(blank_data$Plate), blank_data$R.umol.min, ylab="umol O2 min-1",, xlab="Plate Number")
-abline(h=-meanblank)#blanks during dark phase
-plot(as.factor(blank_data$Temperature), blank_data$R.umol.min, ylab="umol O2 min-1",xlab="Temperature Level")
-abline(h=-meanblank)#blanks during dark phase
-plot(as.factor(blank_data$Treatment), blank_data$R.umol.min, ylab="umol O2 min-1", xlab="Treatment")
-abline(h=-meanblank)#blanks during dark phase
+#visualize all blank data by Run
+par(mfrow=c(1,2))
+plot(as.factor(blank_data$Run),blank_data$R.blank.umol.min, ylab="umol O2 min-1", xlab="RUN Number", ylim=c(-0.0004,0.0002))
+abline(h=meanblank)
+abline(h=0, col="red")
 
-#identify the mean blank of all runs' blanks
-oxygen$R.Blank.umol.min <- meanblank
+#visualize blank data by Run with positive blank values removed
+xx<- blank_data %>% filter(R.blank.umol.min<0)
+plot(as.factor(xx$Run), xx$R.blank.umol.min, ylab="umol O2 min-1", xlab="RUN Number", ylim=c(-0.0004,0.0002))
+abline(h=mean(xx$R.blank.umol.min))
+abline(h=0, col="red")
 
-#CODE FOR CALCULATING MEAN BY RUN
-#aggregate(R.umol.min ~ Date*Run, data=blank_data, mean) #calculate average blank for each run
+#replace positive values with NA
+blank_data <-blank_data%>%
+  mutate(R.blank.umol.min = ifelse(R.blank.umol.min>0, NA_real_, R.blank.umol.min))
 
-#colnames(resp.blnk)[colnames(resp.blnk) == 'R.umol.min'] <- 'R.Blank.umol.min' #rename to specify blank for R
+#calculate mean with positive blank values removed
+meanblank.rem <- mean(blank_data$R.blank.umol.min, na.rm=T) #mean R phase blanks
 
-#oxygen <- full_join(oxygen, resp.blnk) #add R blanks to master
+#replace NAs with mean with positive blank values removed 
+blank_data <-blank_data %>%
+  mutate(R.blank.umol.min = ifelse(is.na(R.blank.umol.min), meanblank.rem, R.blank.umol.min))
+
+blank_data <-blank_data %>%
+  group_by(Run) %>%
+  summarise(mean.R.blank.umol.min= mean(R.blank.umol.min))
+
+oxygen <- full_join(oxygen, blank_data) #add R blanks to master
 
 ```
 
 Subtract blank values to generate a blank corrected value for umol O2 sec-1.  
 
 ```{r, warning=FALSE, message=FALSE}
-oxygen$R.umol.min.corr<-oxygen$R.umol.min-oxygen$R.Blank.umol.min #subtract R blanks
+oxygen$R.umol.min.corr<-oxygen$R.umol.min-oxygen$mean.R.blank.umol.min #subtract R blanks
 ```
 
 Normalize to biologically relevant measure. Here, normalize to number of larvae. This can be substituted or changed for larval size/volume as well.  
@@ -279,7 +289,6 @@ write.csv(oxygen.bio, paste0("Pacu2021/Output/Respiration/TPC/oxygen_Resp_rates.
 
 #Visualize Data
 #par(mfrow=c(2,2))
-plot(oxygen.bio$Plate, oxygen.bio$R.nmol.org.min , ylab="nmol O2 larva-1 min-1",xlab="Plate Number") #blanks during dark phase
 plot(oxygen.bio$Temperature, oxygen.bio$R.nmol.org.min , ylab="nmol O2 larva-1 min-1",xlab="Temperature") #blanks during dark phase
 ```
 
