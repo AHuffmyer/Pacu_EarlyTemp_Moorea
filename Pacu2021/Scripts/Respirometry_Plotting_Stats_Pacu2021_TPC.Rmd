@@ -82,8 +82,8 @@ r_plot<-PRdata %>%
     ggplot(., aes(x = Temperature, y = rate, colour=Treatment)) +
     geom_point(aes(fill=Treatment, group=interaction(Temperature, Treatment)), pch = 21, size=2, alpha=0.5) + 
     xlab("Temperature") + 
-    scale_fill_manual(name="Treatment", values=c("blue","red"))+
-    scale_color_manual(name="Treatment", values=c("blue","red"))+
+    scale_fill_manual(name="Treatment", values=c("#3450A3","#E9A33D"))+
+    scale_color_manual(name="Treatment", values=c("#3450A3","#E9A33D"))+
     ylab(expression(bold(paste("R (nmol ", O[2], " larva"^-1, "min"^-1, ")")))) +
     theme_classic() + 
     theme(legend.position="none",
@@ -133,8 +133,8 @@ r_plot<-PRdata %>%
     ggplot(., aes(x = Temperature, y = rate, colour=Treatment)) +
     geom_point(aes(fill=Treatment, group=interaction(Temperature, Treatment)), pch = 21, size=2, alpha=0.5) + 
     xlab("Temperature") + 
-    scale_fill_manual(name="Treatment", values=c("blue","red"))+
-    scale_color_manual(name="Treatment", values=c("blue","red"))+
+    scale_fill_manual(name="Treatment", values=c("#3450A3","#E9A33D"))+
+    scale_color_manual(name="Treatment", values=c("#3450A3","#E9A33D"))+
     ylab(expression(bold(paste("R (nmol ", O[2], " larva"^-1, "min"^-1, ")")))) +
     theme_classic() + 
     theme(legend.position="none",
@@ -160,8 +160,8 @@ r_plot<-PRdata %>%
     ggplot(., aes(x = Temperature, y = rate, colour=Treatment)) +
     geom_point(aes(fill=Treatment, group=interaction(Temperature, Treatment)), pch = 21, size=2, alpha=0.5) + 
     xlab("Temperature") + 
-    scale_fill_manual(name="Treatment", values=c("blue","red"))+
-    scale_color_manual(name="Treatment", values=c("blue","red"))+
+    scale_fill_manual(name="Treatment", values=c("#3450A3","#E9A33D"))+
+    scale_color_manual(name="Treatment", values=c("#3450A3","#E9A33D"))+
     ylab(expression(bold(paste("R (nmol ", O[2], " larva"^-1, "min"^-1, ")")))) +
     theme_classic() + 
     theme(legend.position="none",
@@ -267,9 +267,9 @@ amb.boot1_conf_preds <- group_by(amb.boot1_preds, temp) %>%
 
 # plot bootstrapped CIs
 amb.CI.plot <- ggplot() +
-  geom_line(aes(temp, .fitted), amb.preds, col = 'blue') +
-  geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), amb.boot1_conf_preds, fill = 'blue', alpha = 0.3) +
-  geom_point(aes(temp, rate), d.amb, size = 2, alpha = 0.5,col = 'blue') +
+  geom_line(aes(temp, .fitted), amb.preds, col = '#3450A3') +
+  geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), amb.boot1_conf_preds, fill = '#3450A3', alpha = 0.3) +
+  geom_point(aes(temp, rate), d.amb, size = 2, alpha = 0.5,col = '#3450A3') +
   theme_bw(base_size = 12) +
   labs(x = 'Temperature (ºC)',
        y = 'Respiration Rate (nmol O2/larva/min')
@@ -346,9 +346,9 @@ high.boot1_conf_preds <- group_by(high.boot1_preds, temp) %>%
 
 # plot bootstrapped CIs
 high.CI.plot <- ggplot() +
-  geom_line(aes(temp, .fitted), high.preds, col = 'red') +
-  geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), high.boot1_conf_preds, fill = 'red', alpha = 0.3) +
-  geom_point(aes(temp, rate), d.high, size = 2, alpha = 0.5,col = 'red') +
+  geom_line(aes(temp, .fitted), high.preds, col = "#E9A33D") +
+  geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), high.boot1_conf_preds, fill = '#E9A33D', alpha = 0.3) +
+  geom_point(aes(temp, rate), d.high, size = 2, alpha = 0.5,col = "#E9A33D") +
   theme_bw(base_size = 12) +
   labs(x = 'Temperature (ºC)',
        y = 'Respiration Rate (nmol O2/larva/min')
@@ -358,16 +358,16 @@ high.CI.plot
 
 ```{r}
  #set plot colors
-cols <- c("ambient"="blue", "high"="red")
+cols <- c("ambient"="#3450A3", "high"="#E9A33D")
   
 # plot data and model fit
 TPC.plot <- ggplot(data=PRdata, aes(x=temp)) +
    geom_point(aes(temp, rate, color="ambient"), d.amb, size = 2, alpha = 0.5) +
    geom_point(aes(temp, rate, color="high"), d.high, size = 2, alpha = 0.5) +
-   geom_line(aes(temp, .fitted), amb.preds, col = 'blue', size=2) +
-   geom_line(aes(temp, .fitted), high.preds, col = 'red', size=2) +
-   geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), high.boot1_conf_preds, fill = 'red', alpha = 0.3) +
-   geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), amb.boot1_conf_preds, fill = 'blue', alpha = 0.3) +
+   geom_line(aes(temp, .fitted), amb.preds, col = '#3450A3', size=2) +
+   geom_line(aes(temp, .fitted), high.preds, col = "#E9A33D", size=2) +
+   geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), high.boot1_conf_preds, fill = "#E9A33D", alpha = 0.3) +
+   geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), amb.boot1_conf_preds, fill = '#3450A3', alpha = 0.3) +
    xlim(21,33)+
    scale_x_continuous(breaks=c(22,24,26,28,30,32,34,36))+
    theme_bw(base_size = 12) +
@@ -432,7 +432,7 @@ All_params <- All_params %>%
 #Plot all of the estimates
 estimate.plots <- ggplot(All_params, aes(Treatment, estimate, color=Treatment)) +
   geom_point(size = 2) +
-  scale_color_manual(name="Treatment", values=c("blue","red"))+
+  scale_color_manual(name="Treatment", values=c("#3450A3","#E9A33D"))+
   geom_linerange(aes(ymin = conf_lower, ymax = conf_upper)) +
   theme_bw() +
   facet_wrap(~param, scales = 'free_y') +
@@ -453,7 +453,7 @@ All_params <- All_params %>%
 #view estimate plots
 estimate.plots <- ggplot(All_params, aes(Treatment, estimate, color=Treatment)) +
   geom_point(size = 2) +
-  scale_color_manual(name="Treatment", values=c("blue","red"))+
+  scale_color_manual(name="Treatment", values=c("#3450A3","#E9A33D"))+
   geom_linerange(aes(ymin = conf_lower, ymax = conf_upper)) +
   theme_bw() +
   labs(y = NULL)+
