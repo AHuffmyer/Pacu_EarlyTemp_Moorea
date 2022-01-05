@@ -224,6 +224,9 @@ oxygen<-oxygen%>%
 ```
 
 
+
+
+
 Account for volume and subtract blank values.    
 ```{r, results=TRUE, warning=FALSE, message=FALSE}
 #Account for chamber volume to convert from umol L-1 m-1 to umol m-1. This standardizes across water volumes (different because of coral size) and removes per Liter
@@ -253,14 +256,17 @@ blank_data <-blank_data%>%
 
 #calculate mean with positive blank values removed
 meanblank.rem <- mean(blank_data$R.blank.umol.min, na.rm=T) #mean R phase blanks
+```
 
-#replace NAs with mean with positive blank values removed 
-blank_data <-blank_data %>%
-  mutate(R.blank.umol.min = ifelse(is.na(R.blank.umol.min), meanblank.rem, R.blank.umol.min))
-
+Replace blank values with the overall mean for runs in which both blanks had to be removed (Run 6 and Run C).  
+```{r}
+#replace NAs with mean with positive blank values removed for runs in which both blanks were removed
 blank_data <-blank_data %>%
   group_by(Run) %>%
-  summarise(mean.R.blank.umol.min= mean(R.blank.umol.min))
+  summarise(mean.R.blank.umol.min= mean(R.blank.umol.min, na.rm=TRUE))
+
+blank_data <-blank_data %>%
+  mutate(mean.R.blank.umol.min = ifelse(is.na(mean.R.blank.umol.min), meanblank.rem, mean.R.blank.umol.min))
 
 oxygen <- full_join(oxygen, blank_data) #add R blanks to master
 
