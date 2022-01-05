@@ -64,7 +64,7 @@ PRdata<-PRdata[!is.na(PRdata$Type),]
 PRdata$Temperature<-as.factor(PRdata$Temperature)
 PRdata$Temperature<-as.numeric(as.character(PRdata$Temperature))
 PRdata$Treatment<-as.factor(PRdata$Treatment)
-PRdata$Plate<-as.factor(PRdata$Plate)
+#PRdata$Plate<-as.factor(PRdata$Plate)
 PRdata$Run<-as.factor(PRdata$Run)
 
 # calculate absolute rates and set temp and rate column names
@@ -125,7 +125,8 @@ PRdata <- left_join(PRdata, Quants)
 #remove outliers from rates
 PRdata <- PRdata %>%
   filter(rate < upper) %>%
-  filter(rate > lower)
+  filter(rate > lower) #%>%
+  #filter(rate < 0.125)
 
 # Visualize data following outlier removal
 r_plot<-PRdata %>%
@@ -151,8 +152,8 @@ Filtering curve to environmentally relevant Temperatures 22-34°C
 
 #Filtering out data from Temperatures below 21 and above 33
 PRdata <- PRdata %>%
-    filter(!Temperature<21) %>%
-    filter(!Temperature>32.5)
+    filter(!Temperature<20) %>%
+    filter(!Temperature>36.51)
 
 # Visualize data following range filtering
 r_plot<-PRdata %>%
@@ -368,7 +369,7 @@ TPC.plot <- ggplot(data=PRdata, aes(x=temp)) +
    geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), high.boot1_conf_preds, fill = 'red', alpha = 0.3) +
    geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), amb.boot1_conf_preds, fill = 'blue', alpha = 0.3) +
    xlim(21,33)+
-   scale_x_continuous(breaks=c(22,24,26,28,30,32))+
+   scale_x_continuous(breaks=c(22,24,26,28,30,32,34,36))+
    theme_bw(base_size = 12) +
    scale_colour_manual(name="Treatment",values=cols)+
    theme(legend.position = c(0.55, 0.9),
