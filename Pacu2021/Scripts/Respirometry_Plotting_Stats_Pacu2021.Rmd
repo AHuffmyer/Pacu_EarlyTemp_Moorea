@@ -12,7 +12,7 @@ output:
 editor_options: 
   chunk_output_type: console
 ---
-This script analyzes and plots data for Symbiontic Integration 2021 respirometry data for Pacuta larvae.   
+This script analyzes and plots data for Symbiotic Integration 2021 respirometry data for Pacuta larvae.   
 
 # **Setup**  
 
@@ -95,7 +95,7 @@ Plot data as a box plot with means overlayed.
 ```{r}
 r_means<-PRdata %>%
     group_by(Temperature)%>%
-    summarise(mean=mean(R.nmol.org.min), sd=sd(R.nmol.org.min), N=length(R.nmol.org.min), se=sd/sqrt(N))
+    summarise(mean=mean(R.nmol.org.min), sd=sd(R.nmol.org.min), N=length(R.nmol.org.min), se=sd/sqrt(N)) 
   
 r_plot<- ggplot(NULL, aes(group=Temperature)) +
     geom_hline(yintercept=0, linetype="dashed", color="black", size=0.75)+
