@@ -85,5 +85,5 @@ Once the job is done, we want to view the newly made file.
 Open a new terminal that is not logged into Andromeda. Output file to local computer and view (outside of Andromeda).  
 
 ```
-scp pierrick_harnay@ssh3.hac.uri.edu:/data/putnamlab/pharnay/Pacuta_Thermal/fastqc_results/pacuta_tagseq_raw_qc_multiqc_report.html ~Desktop
+scp pierrick_harnay@ssh3.hac.uri.edu:/data/putnamlab/pharnay/Pacuta_Thermal/fastqc_results/pacuta_tagseq_raw_qc_multiqc_report.html /Users/pierrickharnay/Dropbox/MyProjects/Pacu_EarlyTemp_Moorea/Pacu2021/Output
 ```
