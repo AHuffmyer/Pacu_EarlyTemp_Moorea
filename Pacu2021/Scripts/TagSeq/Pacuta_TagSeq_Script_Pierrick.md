@@ -28,6 +28,8 @@ We first need to look at the quality information for our sequences.
 
 Run fastqc on the raw files and generate a multiQC report.  
 
+In the `Pacuta_Thermal` folder, make a folder called `fastqc_results`.  You only need to do this once.  
+
 ```
 mkdir fastqc_results 
 cd ../ 
@@ -88,6 +90,10 @@ Open a new terminal that is not logged into Andromeda. Output file to local comp
 scp pierrick_harnay@ssh3.hac.uri.edu:/data/putnamlab/pharnay/Pacuta_Thermal/fastqc_results/pacuta_tagseq_raw_qc_multiqc_report.html /Users/pierrickharnay/Dropbox/MyProjects/Pacu_EarlyTemp_Moorea/Pacu2021/Output
 ```
 
+
+
+
+
 # 3. Merge files for each sample across lanes.  
 
 
@@ -106,7 +112,7 @@ nano merge.sh
 #SBATCH --export=NONE
 #SBATCH --mem=100GB
 #SBATCH --mail-type=BEGIN,END,FAIL #email you when job starts, stops and/or fails
-#SBATCH --mail-user=ashuffmyer@uri.edu #your email to send notifications
+#SBATCH --mail-user=pierrick_harnay@uri.edu #your email to send notifications
 #SBATCH --account=putnamlab 
 
 ls -1 ./raw/Pact*R1*.gz | awk -F '_' '{print $1"_"$2}' | sort | uniq > ID
@@ -125,6 +131,7 @@ sbatch merge.sh
 
 Check that we have new "cat" sequences with `cd raw/` and `ls`.  
 
+
 # 4. Conduct QC and filtering of sequences  
 
 In the Pacuta_Thermal folder:  
@@ -139,7 +146,7 @@ nano qc.sh
 #SBATCH --export=NONE
 #SBATCH --mem=100GB
 #SBATCH --mail-type=BEGIN,END,FAIL #email you when job starts, stops and/or fails
-#SBATCH --mail-user=ashuffmyer@uri.edu #your email to send notifications
+#SBATCH --mail-user=pierrick_harnay@uri.edu #your email to send notifications
 #SBATCH --account=putnamlab                  
 #SBATCH --error="qc_script_error" #if your job fails, the error report will be put in this file
 #SBATCH --output="qc_output_script" #once your job is completed, any final job report comments will be put in this file
@@ -170,6 +177,10 @@ echo "Cleaned MultiQC report generated." $(date)
 
 ```
 
+```
+sbatch qc.sh
+``` 
+
 Rename and output clean multiQC file to local computer and view (outside of Andromeda).  
 
 ```
@@ -177,5 +188,5 @@ cd raw
 
 mv multiqc_report.html ../fastqc_results/pacuta_tagseq_clean_qc_multiqc_report.html #renames file
 
-scp ashuffmyer@ssh3.hac.uri.edu:/data/putnamlab/ashuffmyer/pacuta-tagseq/fastqc_results/pacuta_tagseq_clean_qc_multiqc_report.html ~/MyProjects/Pacu_EarlyTemp_Moorea/Pacu2021/Output/TagSeq/
+scp pierrick_harnay@ssh3.hac.uri.edu:/data/putnamlab/pharnay/Pacuta_Thermal/fastqc_results/pacuta_tagseq_clean_qc_multiqc_report.html /Users/pierrickharnay/Dropbox/MyProjects/Pacu_EarlyTemp_Moorea/Pacu2021/Output
 ```
