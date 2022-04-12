@@ -9,7 +9,6 @@ editor_options:
 
 Preliminary analysis of TagSeq dataset for Pocillopora acuta Moorea early life history temperature exposure.  
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -235,13 +234,15 @@ ggsave("Pacu2021/Figures/TagSeq/allgenesfilt-PCA_Date.pdf", allgenesfilt_PCA, wi
 
 
 
-NEED TO RUN THESE ANALYSES WHERE WE PARTITION BY DAY - RUN 31 vs 27 on 05 and 06 and run 34 vs 27 on 07
+NEED TO RUN THESE ANALYSES WHERE WE PARTITION BY DAY - RUN 31 vs 27 on 12/05 and 12/06 and run 34 vs 27 on 12/07
 
 
 # **Run DEG analysis of DEGs for 27C vs 31C**  
 
 Run differential expression test using a Wald model. 
 ```{r, message = FALSE}
+#ADD SUBSET BY DAY 
+
 DEG <- DESeq(gdds) #run differential expression test by group using the Wald model
 ```
 
@@ -312,3 +313,4 @@ save_pheatmap_pdf(pht, "Pacu2021/Figures/TagSeq/pheatmap.pdf")
 ```
 
 
+ADD HEATMAP THAT SHOWS TEMPERATURE AND DAY BLOCKS 

@@ -341,7 +341,7 @@ This will make a .gtf file for each sample.
 
 ## Overview: 
 
-This step creates a count matrix that shows how many transcripts/reads we have for each identified gene in teh reference genome.  
+This step creates a count matrix that shows how many transcripts/reads we have for each identified gene in the reference genome.  
 
 ## Code:  
 
