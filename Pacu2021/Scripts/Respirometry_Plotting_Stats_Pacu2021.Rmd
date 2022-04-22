@@ -119,7 +119,10 @@ r_plot<- ggplot(NULL, aes(group=Temperature)) +
       legend.text=element_text(size=12)
       ); r_plot 
 ```
-  
+
+
+scale_shape_manual(name="Date", values=c(19,17,15), labels=c("05/12/2021", "06/12/2021", "07/12/2021")))+
+
 ```{r}
 PRdata$Date<-as.factor(PRdata$Date)
 

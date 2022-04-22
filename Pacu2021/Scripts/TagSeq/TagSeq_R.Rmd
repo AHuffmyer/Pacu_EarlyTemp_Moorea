@@ -214,7 +214,7 @@ ggsave("Pacu2021/Figures/TagSeq/allgenesfilt-PCA_Temperature.pdf", allgenesfilt_
 Pierrick test: shape of graph PCA with polygon 
 
 ```{r}
-allgenesfilt_PCA <- ggplot(gPCAdata, aes(PC1, PC2, color=Temperature, shape=Date)) + 
+allgenesfilt_PCA <- ggplot(gPCAdata, aes(PC1, PC2, color=Temperature, shape=Temperature)) + 
   geom_point(size=3) +
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
   ylab(paste0("PC2: ",percentVar[2],"% variance")) +
@@ -233,7 +233,7 @@ allgenesfilt_PCA1
 gPCAdata <- plotPCA(gvst, intgroup = c("Temperature", "Date"), returnData=TRUE)
 percentVar <- round(100*attr(gPCAdata, "percentVar")) #plot PCA of samples with all data
 
-allgenesfilt_PCA <- ggplot(gPCAdata, aes(PC1, PC2, color=Temperature, shape=Date, group=Temperature, fill=Temperature)) + 
+allgenesfilt_PCA <- ggplot(gPCAdata, aes(PC1, PC2, color=Temperature, shape=Temperature, group=Date, fill=Temperature)) + 
   geom_point(size=3) + 
   coord_fixed()+
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
@@ -271,11 +271,6 @@ allgenesfilt_PCA
 ggsave("Pacu2021/Figures/TagSeq/allgenesfilt-PCA_Date.pdf", allgenesfilt_PCA, width=11, height=8)
 ```
 
-
-
-NEED TO RUN THESE ANALYSES WHERE WE PARTITION BY DAY - RUN 31 vs 27 on 12/05 and 12/06 and run 34 vs 27 on 12/07
-
-
 # **Run DEG analysis of DEGs for 27C vs 31C**  
 
 Run differential expression test using a Wald model. 
@@ -283,7 +278,42 @@ Run differential expression test using a Wald model.
 #ADD SUBSET BY DAY 
 
 DEG <- DESeq(gdds) #run differential expression test by group using the Wald model
+DEG.results.all <- results(DEG)
+test<-as.data.frame(DEG.results.all)
+
+
+DEG.results.all <- as.data.frame(subset(DEG.results.all, padj<0.05))
+DEG.results.all <- as.data.frame(subset(DEG.results.all, abs(log2FoldChange)>1))
+dim(DEG.results.all)
+
+DEGlist <- gdds[rownames(DEG.results.all)]
+
+DEGvst <- varianceStabilizingTransformation(DEGlist) #apply a variance stabilizing transforamtion to minimize effects of small counts and normalize
 ```
+
+
+
+# **Add heatmap by day and treatment**  
+
+```{r}
+df <- as.data.frame(colData(gdds)[,c("Temperature","Date")])
+df$Temperature <- as.factor(as.character(df$Temperature))
+df$Date <- as.factor(as.character(df$Date))
+
+library(viridis); library(pheatmap)
+
+pdf("Pacu2021/Figures/DEG_pheatmap_temperature_date.pdf")
+pheatmap(assay(DEGvst), cluster_rows=TRUE, show_rownames=FALSE, color=inferno(10),
+         show_colnames=FALSE, fontsize_row=3,
+         scale="row", cluster_cols=TRUE, annotation_col=df)
+dev.off()
+
+```
+
+
+# **Generate list of DEGs**  
+
+## **Run DEG analysis of DEGs for 27C vs 31C**  
 
 Explore significant p-values for comparison between bleached and non-bleached corals and generate .csv file.    
 ```{r, message = FALSE}
@@ -293,15 +323,17 @@ sum(DEG.results$padj < 0.05, na.rm=TRUE)
 
 #there are 14 differentially expressed genes 
 DEGs <- as.data.frame(subset(DEG.results, padj<0.05))
+DEGs<-as.data.frame(subset(DEGs, abs(log2FoldChange)>1))
+
 DEGs$contrast <- as.factor(c("27_vs_31"))
 DEGs$gene_id  <- rownames(DEGs)
 rownames(DEGs) <- NULL
 
 write.csv(DEGs, "Pacu2021/Output/TagSeq/DEGs_27_31.csv")
-```
-There are 14 differentially expressed genes between 27 and 31.    
 
-# **Run DEG analysis of DEGs for 27C vs 34C**  
+```
+
+## **Run DEG analysis of DEGs for 27C vs 34C**  
 
 Run differential expression test using a Wald model. 
 ```{r, message = FALSE}
@@ -316,15 +348,15 @@ sum(DEG.results$padj < 0.05, na.rm=TRUE)
 
 #there are X differentially expressed genes 
 DEGs <- as.data.frame(subset(DEG.results, padj<0.05))
+DEGs<-as.data.frame(subset(DEGs, abs(log2FoldChange)>1))
 DEGs$contrast <- as.factor(c("27_vs_34"))
 DEGs$gene_id  <- rownames(DEGs)
 rownames(DEGs) <- NULL
 
 write.csv(DEGs, "Pacu2021/Output/TagSeq/DEGs_27_34.csv")
 ```
-There are 562 differentially expressed genes between 27 and 34. 
 
-
+## **Run DEG analysis of DEGs for 31C vs 34C**  
 ```{r, message = FALSE}
 DEG.results <- results(DEG, contrast= c("Temperature", "31","34"))
 head(DEG.results)
@@ -332,13 +364,13 @@ sum(DEG.results$padj < 0.05, na.rm=TRUE)
 
 #there are X differentially expressed genes 
 DEGs <- as.data.frame(subset(DEG.results, padj<0.05))
+DEGs<-as.data.frame(subset(DEGs, abs(log2FoldChange)>1))
 DEGs$contrast <- as.factor(c("31_vs_34"))
 DEGs$gene_id  <- rownames(DEGs)
 rownames(DEGs) <- NULL
 
 write.csv(DEGs, "Pacu2021/Output/TagSeq/DEGs_31_34.csv")
 ```
-There are 348 differentially expressed genes between 31 and 34. 
 
 # **Plot a heatmap of sample to sample distances**    
 
@@ -368,4 +400,4 @@ save_pheatmap_pdf(pht, "Pacu2021/Figures/TagSeq/pheatmap.pdf")
 ```
 
 
-ADD HEATMAP THAT SHOWS TEMPERATURE AND DAY BLOCKS 
+In report, list the number of DEGs between each treatment. There are more differentially expressed genes between 27/31 and 34C.  
