@@ -155,9 +155,12 @@ head(metadata_ordered)
 
 metadata_ordered$SampleName
 colnames(gcount_filt)
+head(gcount_filt)
 ```
 
 These match!    
+
+*Maybe insert PERMANOVA here*  
 
 # **Construct DESeq2 data set by temperature**  
 
@@ -189,6 +192,12 @@ head(assay(gvst), 3) #view transformed gene count data for the first three genes
 ```
 
 # **Examine PCA and sample distances of all genes**  
+
+Permanova models.  
+```{r}
+test<-as.data.frame(gvst)
+```
+
 
 Plot a PCA of samples by temperature.      
 
@@ -271,7 +280,7 @@ allgenesfilt_PCA
 ggsave("Pacu2021/Figures/TagSeq/allgenesfilt-PCA_Date.pdf", allgenesfilt_PCA, width=11, height=8)
 ```
 
-# **Run DEG analysis of DEGs for 27C vs 31C**  
+# **Run DEG analysis of DEGs for all treatments**  
 
 Run differential expression test using a Wald model. 
 ```{r, message = FALSE}
@@ -281,7 +290,6 @@ DEG <- DESeq(gdds) #run differential expression test by group using the Wald mod
 DEG.results.all <- results(DEG)
 test<-as.data.frame(DEG.results.all)
 
-
 DEG.results.all <- as.data.frame(subset(DEG.results.all, padj<0.05))
 DEG.results.all <- as.data.frame(subset(DEG.results.all, abs(log2FoldChange)>1))
 dim(DEG.results.all)
@@ -290,8 +298,6 @@ DEGlist <- gdds[rownames(DEG.results.all)]
 
 DEGvst <- varianceStabilizingTransformation(DEGlist) #apply a variance stabilizing transforamtion to minimize effects of small counts and normalize
 ```
-
-
 
 # **Add heatmap by day and treatment**  
 
@@ -303,7 +309,7 @@ df$Date <- as.factor(as.character(df$Date))
 library(viridis); library(pheatmap)
 
 pdf("Pacu2021/Figures/DEG_pheatmap_temperature_date.pdf")
-pheatmap(assay(DEGvst), cluster_rows=TRUE, show_rownames=FALSE, color=inferno(10),
+pheatmap::pheatmap(assay(DEGvst), cluster_rows=TRUE, show_rownames=FALSE, color=inferno(10),
          show_colnames=FALSE, fontsize_row=3,
          scale="row", cluster_cols=TRUE, annotation_col=df)
 dev.off()
@@ -315,11 +321,22 @@ dev.off()
 
 ## **Run DEG analysis of DEGs for 27C vs 31C**  
 
-Explore significant p-values for comparison between bleached and non-bleached corals and generate .csv file.    
+Explore significant p-values for comparison between bleached and non-bleached corals and generate .csv file.  
+
+Also generate output file for GoMWU that has a list of all genes with the log fold change for each comparison. 
 ```{r, message = FALSE}
 DEG.results <- results(DEG, contrast= c("Temperature", "27","31"))
 head(DEG.results)
 sum(DEG.results$padj < 0.05, na.rm=TRUE)
+
+#write file for GOMWU
+gomwu<-as.data.frame(DEG.results)
+gomwu$gene_id  <- rownames(gomwu)
+gomwu<-gomwu%>%
+  select(gene_id, log2FoldChange)
+rownames(gomwu)<-NULL
+dim(gomwu)
+write_csv(gomwu, "Pacu2021/Output/GOMWU/GOMWU_27_31.csv")
 
 #there are 14 differentially expressed genes 
 DEGs <- as.data.frame(subset(DEG.results, padj<0.05))
@@ -346,6 +363,15 @@ DEG.results <- results(DEG, contrast= c("Temperature", "27","34"))
 head(DEG.results)
 sum(DEG.results$padj < 0.05, na.rm=TRUE)
 
+#write file for GOMWU
+gomwu<-as.data.frame(DEG.results)
+gomwu$gene_id  <- rownames(gomwu)
+gomwu<-gomwu%>%
+  select(gene_id, log2FoldChange)
+rownames(gomwu)<-NULL
+dim(gomwu)
+write_csv(gomwu, "Pacu2021/Output/GOMWU/GOMWU_27_34.csv")
+
 #there are X differentially expressed genes 
 DEGs <- as.data.frame(subset(DEG.results, padj<0.05))
 DEGs<-as.data.frame(subset(DEGs, abs(log2FoldChange)>1))
@@ -361,6 +387,15 @@ write.csv(DEGs, "Pacu2021/Output/TagSeq/DEGs_27_34.csv")
 DEG.results <- results(DEG, contrast= c("Temperature", "31","34"))
 head(DEG.results)
 sum(DEG.results$padj < 0.05, na.rm=TRUE)
+
+#write file for GOMWU
+gomwu<-as.data.frame(DEG.results)
+gomwu$gene_id  <- rownames(gomwu)
+gomwu<-gomwu%>%
+  select(gene_id, log2FoldChange)
+rownames(gomwu)<-NULL
+dim(gomwu)
+write_csv(gomwu, "Pacu2021/Output/GOMWU/GOMWU_31_34.csv")
 
 #there are X differentially expressed genes 
 DEGs <- as.data.frame(subset(DEG.results, padj<0.05))
@@ -401,3 +436,35 @@ save_pheatmap_pdf(pht, "Pacu2021/Figures/TagSeq/pheatmap.pdf")
 
 
 In report, list the number of DEGs between each treatment. There are more differentially expressed genes between 27/31 and 34C.  
+# **Generate list of GO terms for GO_MWU analysis**  
+
+Read in annotation file. Obtained from Jill Ashey annotations here: https://github.com/JillAshey/FunctionalAnnotation/tree/main/final_Annotations  
+```{r}
+library (readr)
+
+url="https://raw.githubusercontent.com/JillAshey/FunctionalAnnotation/main/final_Annotations/Pacuta_GOterms_20220121.csv?token=GHSAT0AAAAAABHMRPF6SEFXUTG27A4B6HNEYTJTENA"
+go_terms<-read.csv(url(url))
+head(go_terms)
+dim(go_terms)
+
+url="https://raw.githubusercontent.com/JillAshey/FunctionalAnnotation/main/final_Annotations/Pacuta_annot_20220121.csv?token=GHSAT0AAAAAABHMRPF64KUW3T6426B5IDDCYTJTHDA"
+annot<-read_csv(url(url))
+head(annot)
+```
+
+Using the go_terms file, make a data frame that has one column for gene id and one column for go terms separated by semicolons.  
+```{r}
+go_mwu_terms <- go_terms %>% 
+  select(SeqName, GO.ID)%>%
+  group_by(SeqName) %>% 
+  summarise(GO.ID = str_c(toString(GO.ID)))%>% #group go terms into one row for each gene 
+  apply(., 2, gsub, patt=",", replace=";") #replace commas with semicolons
+  
+head(go_mwu_terms)
+dim(go_mwu_terms)
+```
+
+Export file for use in GO_MWU.      
+```{r}
+write.table(go_mwu_terms, "Pacu2021/Output/GOMWU/go_terms.tab", sep="\t", row.names = F)
+```

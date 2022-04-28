@@ -230,6 +230,8 @@ Unzip gff file
 gunzip Pocillopora_acuta_HIv1.genes.gff3.gz
 ```
 
+AH loaded in a fixed version of the gff3 file from Jill Ashey's R scripts.  
+
 Create a script  
 
 ```
@@ -316,7 +318,7 @@ array=($(ls *cat.bam)) #Make an array of sequences to assemble
  
 for i in ${array[@]}; do #Running with the -e option to compare output to exclude novel genes. Also output a file with the gene abundances
         sample_name=`echo $i| awk -F [_] '{print $1"_"$2"_"$3}'`
-	stringtie -p 8 -e -B -G Pocillopora_acuta_HIv1.genes.gff3 -A ${sample_name}.gene_abund.tab -o ${sample_name}.gtf ${i}
+	stringtie -p 8 -e -B -G Pacu.GFFannotations.fixed_transcript.gff3 -A ${sample_name}.gene_abund.tab -o ${sample_name}.gtf ${i}
         echo "StringTie assembly for seq file ${i}" $(date)
 done
 echo "StringTie assembly COMPLETE, starting assembly analysis" $(date)
@@ -381,10 +383,10 @@ module load GffCompare/0.12.1-GCCcore-8.3.0
 #make gtf_list.txt file
 ls Pact*.gtf > gtf_list.txt
 
-stringtie --merge -p 8 -G Pocillopora_acuta_HIv1.genes.gff3 -o Pacuta_merged.gtf gtf_list.txt #Merge GTFs to form $
+stringtie --merge -p 8 -G Pacu.GFFannotations.fixed_transcript.gff3 -o Pacuta_merged.gtf gtf_list.txt #Merge GTFs to form $
 echo "Stringtie merge complete" $(date)
 
-gffcompare -r Pocillopora_acuta_HIv1.genes.gff3 -G -o merged Pacuta_merged.gtf #Compute the accuracy and pre$
+gffcompare -r Pacu.GFFannotations.fixed_transcript.gff3 -G -o merged Pacuta_merged.gtf #Compute the accuracy and pre$
 echo "GFFcompare complete, Starting gene count matrix assembly..." $(date)
 
 #make gtf list text file
@@ -404,7 +406,7 @@ The final file is `Pacuta_gene_count_matrix.csv`.
 Move gene count matrix off of server and onto the computer to push to GitHub.   
 
 ```
-scp ashuffmyer@ssh3.hac.uri.edu:/data/putnamlab/pharnay/Pacuta_Thermal/Pacuta_gene_count_matrix.csv ~/MyProjects/Pacu_EarlyTemp_Moorea/Pacu2021/Output/TagSeq/
+scp ashuffmyer@ssh3.hac.uri.edu:/data/putnamlab/ashuffmyer/pacuta-tagseq/sequences/Pacuta_gene_count_matrix.csv ~/MyProjects/Pacu_EarlyTemp_Moorea/Pacu2021/Output/TagSeq/
 ```
 
 
