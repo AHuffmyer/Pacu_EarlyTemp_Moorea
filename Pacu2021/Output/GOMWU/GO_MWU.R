@@ -21,7 +21,7 @@ setwd("Pacu2021/Output/GOMWU")
 input="GOMWU_27_34.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
 goAnnotations="go_terms.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
 goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
-goDivision="BP" # either MF, or BP, or CC
+goDivision="MF" # either MF, or BP, or CC
 source("gomwu.functions.R")
 
 
