@@ -436,6 +436,7 @@ save_pheatmap_pdf(pht, "Pacu2021/Figures/TagSeq/pheatmap.pdf")
 
 
 In report, list the number of DEGs between each treatment. There are more differentially expressed genes between 27/31 and 34C.  
+
 # **Generate list of GO terms for GO_MWU analysis**  
 
 Read in annotation file. Obtained from Jill Ashey annotations here: https://github.com/JillAshey/FunctionalAnnotation/tree/main/final_Annotations  
@@ -466,5 +467,5 @@ dim(go_mwu_terms)
 
 Export file for use in GO_MWU.      
 ```{r}
-write.table(go_mwu_terms, "Pacu2021/Output/GOMWU/go_terms.tab", sep="\t", row.names = F)
+write.table(go_mwu_terms, "Pacu2021/Output/GOMWU/go_terms.tab", sep="\t", row.names = F, col.names = F)
 ```
