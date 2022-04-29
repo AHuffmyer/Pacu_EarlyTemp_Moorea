@@ -437,35 +437,320 @@ save_pheatmap_pdf(pht, "Pacu2021/Figures/TagSeq/pheatmap.pdf")
 
 In report, list the number of DEGs between each treatment. There are more differentially expressed genes between 27/31 and 34C.  
 
-# **Generate list of GO terms for GO_MWU analysis**  
+# **Functional Enrichment**  
 
 Read in annotation file. Obtained from Jill Ashey annotations here: https://github.com/JillAshey/FunctionalAnnotation/tree/main/final_Annotations  
 ```{r}
-library (readr)
+#library (readr)
 
-url="https://raw.githubusercontent.com/JillAshey/FunctionalAnnotation/main/final_Annotations/Pacuta_GOterms_20220121.csv?token=GHSAT0AAAAAABHMRPF6SEFXUTG27A4B6HNEYTJTENA"
-go_terms<-read.csv(url(url))
+#url="https://raw.githubusercontent.com/JillAshey/FunctionalAnnotation/main/final_Annotations/Pacuta_GOterms_20220121.csv?token=GHSAT0AAAAAABHMRPF75HM2EU2XISCGUBEUYTLBWPA"
+#go_terms<-read.csv(url(url))
+#head(go_terms)
+#dim(go_terms)
+
+#write.csv(go_terms, "Pacu2021/Data/TagSeq/Pacuta_GOterms_20220121.csv")
+
+#url="https://raw.githubusercontent.com/JillAshey/FunctionalAnnotation/main/final_Annotations/Pacuta_annot_20220121.csv?token=GHSAT0AAAAAABHMRPF7T4Y3EUA6E6DV7EEAYTLBXIA"
+#annot<-read_csv(url(url))
+#head(annot)
+
+#write.csv(annot, "Pacu2021/Data/TagSeq/Pacuta_annot_20220121.csv")
+```
+
+Load in files.  
+```{r}
+go_terms<-read.csv("Pacu2021/Data/TagSeq/Pacuta_GOterms_20220121.csv")
+annot<-read.csv("Pacu2021/Data/TagSeq/Pacuta_annot_20220121.csv")
+
 head(go_terms)
-dim(go_terms)
-
-url="https://raw.githubusercontent.com/JillAshey/FunctionalAnnotation/main/final_Annotations/Pacuta_annot_20220121.csv?token=GHSAT0AAAAAABHMRPF64KUW3T6426B5IDDCYTJTHDA"
-annot<-read_csv(url(url))
 head(annot)
 ```
 
 Using the go_terms file, make a data frame that has one column for gene id and one column for go terms separated by semicolons.  
 ```{r}
-go_mwu_terms <- go_terms %>% 
+go_terms <- go_terms %>% 
   select(SeqName, GO.ID)%>%
   group_by(SeqName) %>% 
   summarise(GO.ID = str_c(toString(GO.ID)))%>% #group go terms into one row for each gene 
   apply(., 2, gsub, patt=",", replace=";") #replace commas with semicolons
   
-head(go_mwu_terms)
-dim(go_mwu_terms)
+head(go_terms)
+dim(go_terms)
 ```
 
 Export file for use in GO_MWU.      
 ```{r}
 write.table(go_mwu_terms, "Pacu2021/Output/GOMWU/go_terms.tab", sep="\t", row.names = F, col.names = F)
 ```
+
+## **Run goseq on upregulated genes**  
+
+Run Goseq functional enrichment using scripts written by K. Wong.  
+
+```{r}
+library(goseq)
+```
+
+Load in goslim file.  
+```{r}
+goslim <- read.csv("Pacu2021/Output/GoSeq/GO-GOslim.csv")
+goslim <- goslim %>% select(-term)
+```
+
+Prepare files for goseq: one list of DEGs upregulated in 34 vs 27 and one list of DEGs downregulated in 34 vs 27.  
+```{r}
+DEG.results_27vs34 <- results(DEG, contrast= c("Temperature", "27","34"))
+head(DEG.results_27vs34)
+sum(DEG.results_27vs34$padj < 0.05, na.rm=TRUE)
+
+#there are 553 significantly differentially expressed genes 
+DEGs_27vs34 <- as.data.frame(subset(DEG.results_27vs34, padj<0.05)) #filter by p value
+DEGs_27vs34 <- as.data.frame(subset(DEGs_27vs34, abs(log2FoldChange)>1)) #filter by log fold change
+
+#create an up regulated list
+DEGs_27vs34_up<-as.data.frame(subset(DEGs_27vs34, log2FoldChange>0))
+#151 up regulated genes
+
+#create a down regulated list
+DEGs_27vs34_down<-as.data.frame(subset(DEGs_27vs34, log2FoldChange<0))
+#98 down regulated genes
+```
+
+Add annotation information to the list of genes.  
+```{r}
+annot_select<-annot%>%
+  select(SeqName, Length)%>%
+  rename(gene=SeqName)
+head(annot_select)
+str(annot_select)
+
+DEGs_27vs34_up$gene<-rownames(DEGs_27vs34_up)
+rownames(DEGs_27vs34_up)<-NULL
+head(DEGs_27vs34_up)
+str(DEGs_27vs34_up)
+
+go_terms<-as.data.frame(go_terms)
+
+go_terms<-go_terms%>%
+  rename(gene=SeqName)
+head(go_terms)
+str(go_terms)
+```
+
+Merge together files with information of interest.  
+```{r}
+gene_list_up<-left_join(left_join(DEGs_27vs34_up, annot_select), go_terms) 
+head(gene_list_up)
+```
+
+Add vectors.  
+```{r}
+# Vector with all genes after filtering
+ALL.vector <- c(gomwu$gene_id)
+ID.vector <- c(gene_list_up$gene)
+#LENGTH.vector <- c(gene_list_up$Length)
+
+#Length vector for all genes??
+length<-annot_select%>%
+  filter(gene %in% ALL.vector)
+LENGTH.vector <- c(length$Length)
+
+GO.terms <- gene_list_up%>%
+  select(gene, GO.ID)%>%
+  rename(GO_IDs=GO.ID)
+
+str(GO.terms) 
+#Formatting sig gene file with a goterm per row
+split <- strsplit(as.character(GO.terms$GO_IDs), "; ") 
+split2 <- data.frame(v1 = rep.int(GO.terms$gene, sapply(split, length)), v2 = unlist(split)) 
+colnames(split2) <- c("gene", "GO_IDs")
+
+GO.terms<-split2
+
+```
+
+
+
+Run individually with up regulated genes.  
+```{r}
+DEG <- as.character(gene_list_up$gene) #set the enrichment test list
+DEG.vector <-c(DEG) #change to vectors
+  
+gene.vector=as.integer(ALL.vector%in%DEG.vector) #Construct new vector with 1 for DEG and 0 for others
+names(gene.vector)=ALL.vector #set names
+
+DEG.pwf<-nullp(gene.vector, ID.vector, bias.data=LENGTH.vector) #weight vector by length of gene
+
+#Find enriched GO terms
+GO.wall<-goseq(DEG.pwf, ID.vector, gene2cat=GO.terms, test.cats=c("GO:CC", "GO:BP", "GO:MF"), method="Wallenius", use_genes_without_cat=TRUE)
+GO <- GO.wall[order(GO.wall$over_represented_pvalue),]
+colnames(GO)[1] <- "GO_ID"
+  
+#GOslim 
+GO.slim <- left_join(GO, goslim, by = "GO_ID")
+GO.slim <- GO.slim[!duplicated(GO.slim$GO_ID), ]
+  
+#Filtering for p > 0.05
+gene_list_up_sig.GO <- GO.slim %>%
+  dplyr::filter(over_represented_pvalue<0.05) %>%
+  arrange(., ontology, term.x, over_represented_pvalue)
+
+write.csv(gene_list_up_sig.GO , file = "Pacu2021/Output/GoSeq/goseq_27vs34_up.csv")
+
+```
+
+Plot results.  
+```{r}
+```{r}
+# Plotting by BP function
+gene_list_up_sig.GO_plot <- gene_list_up_sig.GO %>%
+  filter(over_represented_pvalue != "NA") %>%
+  filter(numInCat >5) %>%
+  filter(ontology == "BP") %>%
+  arrange(., ontology, GOSlim_bin, over_represented_pvalue)
+
+gene_list_up_sig.GO_plot$GOSlim_bin <- as.factor(gene_list_up_sig.GO_plot$GOSlim_bin)
+
+#plot significantly enriched GO terms by Slim Category
+GOenrich_27vs34_up_BP.plot <-  ggplot(gene_list_up_sig.GO_plot, aes(x = ontology, y = term.x)) + 
+  geom_tile(aes(fill =over_represented_pvalue)) + 
+  facet_grid(GOSlim_bin ~ ., scales = "free_y", labeller = label_wrap_gen(width = 5, multi_line = TRUE))+
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+  strip.text.y = element_text(angle=0, size = 10),
+  strip.text.x = element_text(size = 20),
+  axis.text = element_text(size = 8),
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank())
+
+ggsave(filename="Pacu2021/Figures/GoSeq/GOenrich_27vs34_up_BP.plot.png", plot=GOenrich_27vs34_up_BP.plot, dpi=300, width=12, height=12, units="in")
+```
+
+
+## **Run goseq on downregulated genes**  
+
+Run Goseq functional enrichment using scripts written by K. Wong.  
+
+Load in goslim file.  
+```{r}
+goslim <- read.csv("Pacu2021/Output/GoSeq/GO-GOslim.csv")
+goslim <- goslim %>% select(-term)
+```
+
+Prepare files for goseq: one list of DEGs upregulated in 34 vs 27 and one list of DEGs downregulated in 34 vs 27.  
+```{r}
+head(DEGs_27vs34_down)
+```
+
+Add annotation information to the list of genes.  
+```{r}
+annot_select<-annot%>%
+  select(SeqName, Length)%>%
+  rename(gene=SeqName)
+head(annot_select)
+str(annot_select)
+
+DEGs_27vs34_down$gene<-rownames(DEGs_27vs34_down)
+rownames(DEGs_27vs34_down)<-NULL
+head(DEGs_27vs34_down)
+str(DEGs_27vs34_down)
+
+go_terms<-as.data.frame(go_terms)
+
+go_terms<-go_terms%>%
+  rename(gene=SeqName)
+head(go_terms)
+str(go_terms)
+```
+
+Merge together files with information of interest.  
+```{r}
+gene_list_down<-left_join(left_join(DEGs_27vs34_down, annot_select), go_terms) 
+head(gene_list_down)
+```
+
+Add vectors.  
+```{r}
+# Vector with all genes after filtering
+ALL.vector <- c(gomwu$gene_id)
+ID.vector <- c(gene_list_down$gene)
+#LENGTH.vector <- c(gene_list_down$Length)
+
+#Length vector for all genes??
+length<-annot_select%>%
+  filter(gene %in% ALL.vector)
+LENGTH.vector <- c(length$Length)
+
+GO.terms <- gene_list_down%>%
+  select(gene, GO.ID)%>%
+  rename(GO_IDs=GO.ID)
+
+str(GO.terms) 
+#Formatting sig gene file with a goterm per row
+split <- strsplit(as.character(GO.terms$GO_IDs), "; ") 
+split2 <- data.frame(v1 = rep.int(GO.terms$gene, sapply(split, length)), v2 = unlist(split)) 
+colnames(split2) <- c("gene", "GO_IDs")
+
+GO.terms<-split2
+
+```
+
+
+Run individually with down regulated genes.  
+```{r}
+DEG <- as.character(gene_list_down$gene) #set the enrichment test list
+DEG.vector <-c(DEG) #change to vectors
+  
+gene.vector=as.integer(ALL.vector%in%DEG.vector) #Construct new vector with 1 for DEG and 0 for others
+names(gene.vector)=ALL.vector #set names
+
+DEG.pwf<-nullp(gene.vector, ID.vector, bias.data=LENGTH.vector) #weight vector by length of gene
+
+#Find enriched GO terms
+GO.wall<-goseq(DEG.pwf, ID.vector, gene2cat=GO.terms, test.cats=c("GO:CC", "GO:BP", "GO:MF"), method="Wallenius", use_genes_without_cat=TRUE)
+GO <- GO.wall[order(GO.wall$over_represented_pvalue),]
+colnames(GO)[1] <- "GO_ID"
+  
+#GOslim 
+GO.slim <- left_join(GO, goslim, by = "GO_ID")
+GO.slim <- GO.slim[!duplicated(GO.slim$GO_ID), ]
+  
+#Filtering for p > 0.05
+gene_list_down_sig.GO <- GO.slim %>%
+  dplyr::filter(over_represented_pvalue<0.05) %>%
+  arrange(., ontology, term, over_represented_pvalue)
+
+write.csv(gene_list_down_sig.GO , file = "Pacu2021/Output/GoSeq/goseq_27vs34_up.csv")
+
+```
+
+Plot results.  
+```{r}
+```{r}
+# Plotting by BP function
+gene_list_down_sig.GO_plot <- gene_list_down_sig.GO %>%
+  filter(over_represented_pvalue != "NA") %>%
+  filter(numInCat >5) %>%
+  filter(ontology == "BP") %>%
+  arrange(., ontology, GOSlim_bin, over_represented_pvalue)
+
+gene_list_down_sig.GO_plot$GOSlim_bin <- as.factor(gene_list_down_sig.GO_plot$GOSlim_bin)
+
+#plot significantly depleted GO terms by Slim Category
+GOenrich_27vs34_down_BP.plot <-  ggplot(gene_list_down_sig.GO_plot, aes(x = ontology, y = term)) + 
+  geom_tile(aes(fill =over_represented_pvalue)) + 
+  facet_grid(GOSlim_bin ~ ., scales = "free_y", labeller = label_wrap_gen(width = 5, multi_line = TRUE))+
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+  strip.text.y = element_text(angle=0, size = 10),
+  strip.text.x = element_text(size = 20),
+  axis.text = element_text(size = 8),
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank())
+
+ggsave(filename="Pacu2021/Figures/GoSeq/GOenrich_27vs34_down_BP.plot.png", plot=GOenrich_27vs34_down_BP.plot, dpi=300, width=12, height=12, units="in")
+```
+```
+
+
+
