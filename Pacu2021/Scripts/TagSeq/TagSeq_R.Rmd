@@ -593,7 +593,7 @@ GO.slim <- GO.slim[!duplicated(GO.slim$GO_ID), ]
 #Filtering for p > 0.05
 gene_list_up_sig.GO <- GO.slim %>%
   dplyr::filter(over_represented_pvalue<0.05) %>%
-  arrange(., ontology, term.x, over_represented_pvalue)
+  arrange(., ontology, term, over_represented_pvalue)
 
 write.csv(gene_list_up_sig.GO , file = "Pacu2021/Output/GoSeq/goseq_27vs34_up.csv")
 
@@ -612,7 +612,7 @@ gene_list_up_sig.GO_plot <- gene_list_up_sig.GO %>%
 gene_list_up_sig.GO_plot$GOSlim_bin <- as.factor(gene_list_up_sig.GO_plot$GOSlim_bin)
 
 #plot significantly enriched GO terms by Slim Category
-GOenrich_27vs34_up_BP.plot <-  ggplot(gene_list_up_sig.GO_plot, aes(x = ontology, y = term.x)) + 
+GOenrich_27vs34_up_BP.plot <-  ggplot(gene_list_up_sig.GO_plot, aes(x = ontology, y = term)) + 
   geom_tile(aes(fill =over_represented_pvalue)) + 
   facet_grid(GOSlim_bin ~ ., scales = "free_y", labeller = label_wrap_gen(width = 5, multi_line = TRUE))+
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -720,7 +720,7 @@ gene_list_down_sig.GO <- GO.slim %>%
   dplyr::filter(over_represented_pvalue<0.05) %>%
   arrange(., ontology, term, over_represented_pvalue)
 
-write.csv(gene_list_down_sig.GO , file = "Pacu2021/Output/GoSeq/goseq_27vs34_up.csv")
+write.csv(gene_list_down_sig.GO , file = "Pacu2021/Output/GoSeq/goseq_27vs34_down.csv")
 
 ```
 
