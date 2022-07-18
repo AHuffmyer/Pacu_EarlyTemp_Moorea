@@ -53,6 +53,16 @@ library("vegan")
 
 # **Data input and filtering**  
  
+Load in annotation files.  
+```{r}
+go_terms<-read.csv("Pacu2021/Data/TagSeq/Pacuta_GOterms_20220121.csv")
+annot<-read.csv("Pacu2021/Data/TagSeq/Pacuta_annot_20220121.csv")
+annot <- rename(annot, gene_id = SeqName)
+
+head(go_terms)
+head(annot)
+``` 
+ 
 Import the data files.  
 
 ```{r}
@@ -346,6 +356,8 @@ DEGs$contrast <- as.factor(c("27_vs_31"))
 DEGs$gene_id  <- rownames(DEGs)
 rownames(DEGs) <- NULL
 
+
+DEGs <-left_join(DEGs,annot, by="gene_id")
 write.csv(DEGs, "Pacu2021/Output/TagSeq/DEGs_27_31.csv")
 
 ```
@@ -378,6 +390,7 @@ DEGs<-as.data.frame(subset(DEGs, abs(log2FoldChange)>1))
 DEGs$contrast <- as.factor(c("27_vs_34"))
 DEGs$gene_id  <- rownames(DEGs)
 rownames(DEGs) <- NULL
+DEGs <-left_join(DEGs,annot, by="gene_id")
 
 write.csv(DEGs, "Pacu2021/Output/TagSeq/DEGs_27_34.csv")
 ```
@@ -403,6 +416,7 @@ DEGs<-as.data.frame(subset(DEGs, abs(log2FoldChange)>1))
 DEGs$contrast <- as.factor(c("31_vs_34"))
 DEGs$gene_id  <- rownames(DEGs)
 rownames(DEGs) <- NULL
+DEGs <-left_join(DEGs,annot, by="gene_id")
 
 write.csv(DEGs, "Pacu2021/Output/TagSeq/DEGs_31_34.csv")
 ```
@@ -457,14 +471,14 @@ Read in annotation file. Obtained from Jill Ashey annotations here: https://gith
 #write.csv(annot, "Pacu2021/Data/TagSeq/Pacuta_annot_20220121.csv")
 ```
 
-Load in files.  
-```{r}
-go_terms<-read.csv("Pacu2021/Data/TagSeq/Pacuta_GOterms_20220121.csv")
-annot<-read.csv("Pacu2021/Data/TagSeq/Pacuta_annot_20220121.csv")
+<!-- Load in files.   -->
+<!-- ```{r} -->
+<!-- go_terms<-read.csv("Pacu2021/Data/TagSeq/Pacuta_GOterms_20220121.csv") -->
+<!-- annot<-read.csv("Pacu2021/Data/TagSeq/Pacuta_annot_20220121.csv") -->
 
-head(go_terms)
-head(annot)
-```
+<!-- head(go_terms) -->
+<!-- head(annot) -->
+<!-- ``` -->
 
 Using the go_terms file, make a data frame that has one column for gene id and one column for go terms separated by semicolons.  
 ```{r}
@@ -519,8 +533,8 @@ DEGs_27vs34_down<-as.data.frame(subset(DEGs_27vs34, log2FoldChange<0))
 Add annotation information to the list of genes.  
 ```{r}
 annot_select<-annot%>%
-  select(SeqName, Length)%>%
-  rename(gene=SeqName)
+  select(gene_id, Length)%>%
+#  rename(gene=gene_id)
 head(annot_select)
 str(annot_select)
 
@@ -532,7 +546,7 @@ str(DEGs_27vs34_up)
 go_terms<-as.data.frame(go_terms)
 
 go_terms<-go_terms%>%
-  rename(gene=SeqName)
+  rename(gene=gene_id)
 head(go_terms)
 str(go_terms)
 ```
