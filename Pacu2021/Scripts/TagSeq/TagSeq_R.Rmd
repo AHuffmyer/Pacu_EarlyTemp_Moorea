@@ -7,7 +7,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-Preliminary analysis of TagSeq dataset for Pocillopora acuta Moorea early life history temperature exposure.  
+Analysis of TagSeq dataset for Pocillopora acuta Moorea early life history temperature exposure.  
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -78,10 +78,14 @@ head(gcount)
 Check that there are no genes with 0 counts across all samples. 
 
 ```{r}
+dim(gcount) 
+
 gcount<-gcount %>%
      mutate(Total = rowSums(.[, 1:18]))%>%
     filter(!Total==0)%>%
     select(!Total)
+
+dim(gcount)
 ```
 
 We started with 38,585 genes. About 18,000 genes that had 0's across all samples with 20,518 remaining.    
@@ -168,9 +172,7 @@ colnames(gcount_filt)
 head(gcount_filt)
 ```
 
-These match!    
-
-*Maybe insert PERMANOVA here*  
+These match we are good to continue to the next step!    
 
 # **Construct DESeq2 data set by temperature**  
 
@@ -201,13 +203,39 @@ gvst <- vst(gdds, blind=FALSE) #apply a variance stabilizing transforamtion to m
 head(assay(gvst), 3) #view transformed gene count data for the first three genes in the dataset.  
 ```
 
-# **Examine PCA and sample distances of all genes**  
+# **Conduct PERMANOVA by date and temperature**  
 
-Permanova models.  
+Export data for PERMANOVA test.  
 ```{r}
-test<-as.data.frame(gvst)
+test<-t(assay(gvst)) #export as matrix
+test<-as.data.frame(test)
+
+#add category columns
+test$Sample<-rownames(test)
+test$Temperature<-metadata$Temperature[match(test$Sample, metadata$SampleName)]
+test$Date<-metadata$Date[match(test$Sample, metadata$SampleName)]
+
 ```
 
+Build PERMANOVA model.  
+```{r}
+library(vegan)
+library(factoextra)
+
+scaled_test <-prcomp(test[c(1:8221)], scale=TRUE, center=TRUE)
+fviz_eig(scaled_test)
+
+# scale data
+vegan <- scale(test[c(1:8221)])
+
+# PerMANOVA 
+permanova<-adonis2(vegan ~ Temperature*Date, data = test, method='eu')
+permanova
+```
+
+Gene expression is significantly different between temperatures and date.  
+
+# **Examine PCA and sample distances of all genes**  
 
 Plot a PCA of samples by temperature.      
 
